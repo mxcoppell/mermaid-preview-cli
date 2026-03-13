@@ -67,11 +67,11 @@ echo "graph LR; A-->B" | mermaid-preview --serve
 All output is structured: `mermaid-preview: <message>`
 
 ```
-mermaid-preview: wrote /tmp/mermaid-preview-12345.html    # --once mode
-mermaid-preview: listening on http://127.0.0.1:52341      # server mode
-mermaid-preview: watching diagram.mmd for changes
-mermaid-preview: browser opened
+mermaid-preview: wrote /tmp/mermaid-preview-12345.html           # --once mode
+mermaid-preview: listening on http://127.0.0.1:52341 (flow.mmd)  # server mode
 mermaid-preview: shutting down
+mermaid-preview: no clients connected, shutting down             # auto-shutdown
+mermaid-preview: error: <message>                                # exit code 1 or 2
 ```
 
 ## Architecture

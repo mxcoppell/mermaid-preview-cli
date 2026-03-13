@@ -2,7 +2,7 @@
 
 Lightweight CLI to preview Mermaid diagrams in the browser with live reload.
 
-A single Go binary (~8MB) that starts a local HTTP server, opens your browser, and renders Mermaid diagrams with live reload on file changes. No internet required, no editor plugin needed.
+A single Go binary (~10MB) that starts a local HTTP server, opens your browser, and renders Mermaid diagrams with live reload on file changes. No internet required, no editor plugin needed.
 
 ## Install
 
@@ -51,6 +51,8 @@ mermaid-preview README.md
 | `-t, --theme THEME` | system | `dark`, `light`, or `system` |
 | `-w, --no-watch` | false | Disable file watching |
 | `--poll INTERVAL` | — | Polling fallback for WSL/Docker/NFS (e.g. `500ms`) |
+| `--once` | default for stdin | Render to self-contained HTML and exit (no server) |
+| `--serve` | default for files | Force server mode (override `--once` for stdin) |
 | `-v, --version` | — | Print version |
 | `-h, --help` | — | Print help |
 

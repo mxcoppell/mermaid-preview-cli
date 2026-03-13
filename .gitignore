@@ -2,6 +2,9 @@
 mermaid-preview
 mermaid-preview.exe
 
+# Build / release
+dist/
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -14,6 +17,7 @@ Thumbs.db
 
 # Superpowers
 .superpowers/
+docs/
 
 # E2E test artifacts
 e2e/node_modules/

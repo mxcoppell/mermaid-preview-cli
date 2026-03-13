@@ -82,6 +82,19 @@ test('dark theme applies dark mermaid theme', async ({ page }) => {
   expect(svgHtml).toBeTruthy();
 });
 
+test('dark theme has neutral gray background', async ({ page }) => {
+  // Switch to dark theme
+  await page.keyboard.press('t'); // system -> light
+  await page.keyboard.press('t'); // light -> dark
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  // Verify background is neutral gray (#1e1e1e = rgb(30, 30, 30))
+  const bgColor = await page.evaluate(
+    () => getComputedStyle(document.body).backgroundColor,
+  );
+  expect(bgColor).toBe('rgb(30, 30, 30)');
+});
+
 test('light theme applies default mermaid theme', async ({ page }) => {
   // Switch to light theme
   await page.keyboard.press('t'); // system -> light

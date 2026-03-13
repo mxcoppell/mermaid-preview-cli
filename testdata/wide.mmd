@@ -1,0 +1,37 @@
+sequenceDiagram
+    participant Client
+    participant CDN
+    participant Gateway
+    participant AuthService
+    participant RateLimiter
+    participant Router
+    participant ServiceA
+    participant ServiceB
+    participant ServiceC
+    participant Cache
+    participant Database
+    participant Queue
+    participant Logger
+    Client->>CDN: Request
+    CDN->>Gateway: Cache miss
+    Gateway->>AuthService: Validate token
+    AuthService-->>Gateway: OK
+    Gateway->>RateLimiter: Check quota
+    RateLimiter-->>Gateway: Allowed
+    Gateway->>Router: Route request
+    Router->>ServiceA: Handle
+    ServiceA->>ServiceB: Fetch data
+    ServiceB->>Cache: Lookup
+    Cache-->>ServiceB: Miss
+    ServiceB->>Database: Query
+    Database-->>ServiceB: Results
+    ServiceB->>Cache: Populate
+    ServiceB-->>ServiceA: Data
+    ServiceA->>ServiceC: Enrich
+    ServiceC-->>ServiceA: Enriched
+    ServiceA->>Queue: Emit event
+    ServiceA->>Logger: Audit log
+    ServiceA-->>Router: Response
+    Router-->>Gateway: Response
+    Gateway-->>CDN: Response
+    CDN-->>Client: Response

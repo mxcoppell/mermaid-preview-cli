@@ -88,6 +88,20 @@ go test ./...                                        # unit tests
 cd e2e && npm ci && npx playwright test              # E2E tests
 ```
 
+## Agent Skill
+
+A Claude Code skill is provided at `skills/mermaid-preview.md`. To install it
+for use across projects, symlink or copy it into your Claude Code skills
+directory:
+
+```bash
+# Symlink (recommended — stays up to date)
+ln -s "$(pwd)/skills/mermaid-preview.md" ~/.claude/skills/mermaid-preview.md
+```
+
+Once installed, Claude Code will automatically activate the skill when you ask
+to visualize, preview, or display a Mermaid diagram.
+
 ## Project Structure
 
 ```

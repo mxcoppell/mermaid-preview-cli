@@ -8,6 +8,7 @@
     let zoom = 1;
     let panX = 0;
     let panY = 0;
+    let isFitted = true;
     let isDragging = false;
     let dragStartX = 0;
     let dragStartY = 0;
@@ -169,9 +170,12 @@
         updateStatus(diagramType, nodeCount);
     }
 
-    function renderCurrent() {
+    async function renderCurrent() {
         if (currentContent) {
-            renderContent(currentContent);
+            await renderContent(currentContent);
+            if (isFitted) {
+                requestAnimationFrame(fitToViewport);
+            }
         }
     }
 
@@ -225,11 +229,41 @@
     function updateTransform() {
         diagramWrapper.style.transform =
             'translate(' + panX + 'px, ' + panY + 'px) scale(' + zoom + ')';
-        if (zoom === 1 && panX === 0 && panY === 0) {
+        if (isFitted) {
             zoomLevel.textContent = 'Fit';
         } else {
             zoomLevel.textContent = Math.round(zoom * 100) + '%';
         }
+    }
+
+    function fitToViewport() {
+        // Remove transform to measure natural CSS layout position
+        var prevTransform = diagramWrapper.style.transform;
+        diagramWrapper.style.transform = 'none';
+
+        var containerRect = diagramContainer.getBoundingClientRect();
+        var contentRect = diagram.getBoundingClientRect();
+        if (contentRect.width <= 0 || contentRect.height <= 0) {
+            diagramWrapper.style.transform = prevTransform;
+            return;
+        }
+
+        var PADDING = 40;
+        var scaleX = (containerRect.width - PADDING) / contentRect.width;
+        var scaleY = (containerRect.height - PADDING) / contentRect.height;
+        var fitZoom = Math.min(scaleX, scaleY, 1);
+
+        // Content's natural center relative to container
+        var naturalCX = (contentRect.left - containerRect.left) + contentRect.width / 2;
+        var naturalCY = (contentRect.top - containerRect.top) + contentRect.height / 2;
+
+        // After scale(fitZoom) from origin (0,0), center moves to naturalC * fitZoom
+        // Translate to bring it to container center
+        zoom = fitZoom;
+        panX = containerRect.width / 2 - naturalCX * fitZoom;
+        panY = containerRect.height / 2 - naturalCY * fitZoom;
+        isFitted = true;
+        updateTransform();
     }
 
     function zoomCentered(factor) {
@@ -243,6 +277,7 @@
 
         panX = cx - scale * (cx - panX);
         panY = cy - scale * (cy - panY);
+        isFitted = false;
         updateTransform();
     }
 
@@ -255,10 +290,7 @@
     }
 
     function resetZoom() {
-        zoom = 1;
-        panX = 0;
-        panY = 0;
-        updateTransform();
+        fitToViewport();
     }
 
     // Mouse wheel zoom (centered on cursor)
@@ -279,6 +311,7 @@
         panX = mouseX - scale * (mouseX - panX);
         panY = mouseY - scale * (mouseY - panY);
 
+        isFitted = false;
         updateTransform();
     }, { passive: false });
 
@@ -298,6 +331,7 @@
         if (!isDragging) return;
         panX = dragStartPanX + (e.clientX - dragStartX);
         panY = dragStartPanY + (e.clientY - dragStartY);
+        isFitted = false;
         updateTransform();
     });
 
@@ -580,6 +614,7 @@
             const resp = await fetch('/api/diagram');
             const content = await resp.text();
             await renderContent(content);
+            requestAnimationFrame(fitToViewport);
         } catch (err) {
             showError('Failed to load diagram: ' + err.message);
         }

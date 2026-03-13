@@ -141,7 +141,7 @@ var diagram = document.getElementById('diagram');
 var diagramContainer = document.getElementById('diagram-container');
 var diagramWrapper = document.getElementById('diagram-wrapper');
 var zoomLevel = document.getElementById('zoom-level');
-var zoom = 1, panX = 0, panY = 0;
+var zoom = 1, panX = 0, panY = 0, isFitted = true;
 var isDragging = false, dragStartX, dragStartY, dragStartPanX, dragStartPanY;
 var themeOrder = ['system','light','dark'];
 var themeIdx = themeOrder.indexOf(localStorage.getItem('mermaid-preview-theme') || '` + theme + `');
@@ -155,7 +155,7 @@ function applyTheme() {
   document.documentElement.setAttribute('data-theme', themeOrder[themeIdx]);
   localStorage.setItem('mermaid-preview-theme', themeOrder[themeIdx]);
 }
-function cycleTheme() { themeIdx = (themeIdx + 1) % 3; applyTheme(); renderAll(); }
+function cycleTheme() { themeIdx = (themeIdx + 1) % 3; applyTheme(); renderAll().then(function() { if (isFitted) requestAnimationFrame(fitToViewport); }); }
 applyTheme();
 
 var renderCounter = 0;
@@ -199,28 +199,41 @@ async function renderAll() {
   document.getElementById('status-type').textContent = dtype;
   document.getElementById('status-nodes').textContent = nodeCount > 0 ? nodeCount + ' nodes' : '';
 }
-renderAll();
+renderAll().then(function() { requestAnimationFrame(fitToViewport); });
 
 function updateTransform() {
   diagramWrapper.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + zoom + ')';
-  zoomLevel.textContent = (zoom === 1 && panX === 0 && panY === 0) ? 'Fit' : Math.round(zoom * 100) + '%';
+  zoomLevel.textContent = isFitted ? 'Fit' : Math.round(zoom * 100) + '%';
+}
+function fitToViewport() {
+  var prev = diagramWrapper.style.transform;
+  diagramWrapper.style.transform = 'none';
+  var cr = diagramContainer.getBoundingClientRect();
+  var dr = diagram.getBoundingClientRect();
+  if (dr.width <= 0 || dr.height <= 0) { diagramWrapper.style.transform = prev; return; }
+  var PAD = 40;
+  var sx = (cr.width - PAD) / dr.width, sy = (cr.height - PAD) / dr.height;
+  var fz = Math.min(sx, sy, 1);
+  var ncx = (dr.left - cr.left) + dr.width / 2, ncy = (dr.top - cr.top) + dr.height / 2;
+  zoom = fz; panX = cr.width / 2 - ncx * fz; panY = cr.height / 2 - ncy * fz;
+  isFitted = true; updateTransform();
 }
 function zoomCentered(f) {
   var r = diagramContainer.getBoundingClientRect(), cx = r.width/2, cy = r.height/2, old = zoom;
   zoom = Math.min(Math.max(zoom * f, 0.1), 10); var s = zoom / old;
-  panX = cx - s * (cx - panX); panY = cy - s * (cy - panY); updateTransform();
+  panX = cx - s * (cx - panX); panY = cy - s * (cy - panY); isFitted = false; updateTransform();
 }
 
 document.getElementById('zoom-in').addEventListener('click', function() { zoomCentered(1.2); });
 document.getElementById('zoom-out').addEventListener('click', function() { zoomCentered(1/1.2); });
-document.getElementById('zoom-reset').addEventListener('click', function() { zoom=1; panX=0; panY=0; updateTransform(); });
+document.getElementById('zoom-reset').addEventListener('click', function() { fitToViewport(); });
 document.getElementById('theme-toggle').addEventListener('click', cycleTheme);
 
 diagramContainer.addEventListener('wheel', function(e) {
   e.preventDefault();
   var r = diagramContainer.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, old = zoom;
   zoom = e.deltaY < 0 ? Math.min(zoom * 1.1, 10) : Math.max(zoom / 1.1, 0.1);
-  var s = zoom / old; panX = mx - s * (mx - panX); panY = my - s * (my - panY); updateTransform();
+  var s = zoom / old; panX = mx - s * (mx - panX); panY = my - s * (my - panY); isFitted = false; updateTransform();
 }, {passive: false});
 
 diagramContainer.addEventListener('mousedown', function(e) {
@@ -233,7 +246,7 @@ document.addEventListener('mousemove', function(e) {
   if (!isDragging) return;
   panX = dragStartPanX + (e.clientX - dragStartX);
   panY = dragStartPanY + (e.clientY - dragStartY);
-  updateTransform();
+  isFitted = false; updateTransform();
 });
 document.addEventListener('mouseup', function() {
   if (!isDragging) return; isDragging = false;
@@ -269,7 +282,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 't' || e.key === 'T') { cycleTheme(); return; }
   if (e.key === '+' || e.key === '=') { zoomCentered(1.2); return; }
   if (e.key === '-') { zoomCentered(1/1.2); return; }
-  if (e.key === '0') { zoom = 1; panX = 0; panY = 0; updateTransform(); return; }
+  if (e.key === '0') { fitToViewport(); return; }
 });
 })();
 </script></body></html>`)

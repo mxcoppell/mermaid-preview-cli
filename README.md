@@ -70,6 +70,19 @@ mermaid-preview README.md
 
 `mermaid-preview` is a Go binary with mermaid.js embedded via `//go:embed`. It starts an HTTP server on `127.0.0.1`, serves a single-page app that renders diagrams client-side using mermaid.js, and pushes file changes to the browser via WebSocket. No external dependencies, no internet, no Node.js.
 
+## Agent Integration
+
+`mermaid-preview` includes a Claude Code skill that lets agents automatically discover and use it when you ask to visualize diagrams.
+
+**Install the skill:**
+
+```bash
+# From the repo root
+ln -s "$(pwd)/skills/mermaid-preview.md" ~/.claude/skills/mermaid-preview.md
+```
+
+Once installed, asking Claude Code to "show this as a diagram" or "visualize this flow" will automatically pipe Mermaid source through `mermaid-preview`.
+
 ## Contributing
 
 ```bash

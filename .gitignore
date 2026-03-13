@@ -1,0 +1,25 @@
+# Go binary
+mermaid-preview
+mermaid-preview.exe
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Superpowers
+.superpowers/
+
+# E2E test artifacts
+e2e/node_modules/
+e2e/test-results/
+e2e/playwright-report/
+
+# Go
+*.test
+*.out

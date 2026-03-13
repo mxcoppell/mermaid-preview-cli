@@ -1,0 +1,33 @@
+stateDiagram-v2
+    [*] --> Idle
+
+    Idle --> Authenticating : login request
+    Authenticating --> Authenticated : credentials valid
+    Authenticating --> Idle : credentials invalid
+    Authenticating --> Locked : 3 failed attempts
+
+    Locked --> Idle : timeout (15 min)
+    Locked --> Idle : admin unlock
+
+    state Authenticated {
+        [*] --> Dashboard
+        Dashboard --> Profile : view profile
+        Dashboard --> Settings : open settings
+        Profile --> Dashboard : back
+        Settings --> Dashboard : back
+
+        state Settings {
+            [*] --> General
+            General --> Security
+            General --> Notifications
+            Security --> General
+            Notifications --> General
+            Security --> TwoFactor
+            TwoFactor --> Security
+        }
+    }
+
+    Authenticated --> SessionExpired : token expired
+    Authenticated --> Idle : logout
+    SessionExpired --> Authenticating : re-login
+    SessionExpired --> Idle : dismiss

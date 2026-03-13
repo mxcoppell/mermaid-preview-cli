@@ -1,0 +1,85 @@
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    CUSTOMER {
+        uuid id PK
+        string name
+        string email UK
+        date created_at
+        enum tier "free, pro, enterprise"
+    }
+
+    ORDER ||--|{ ORDER_LINE : contains
+    ORDER {
+        uuid id PK
+        uuid customer_id FK
+        date order_date
+        enum status "pending, confirmed, shipped, delivered, cancelled"
+        decimal total_amount
+        string currency
+    }
+
+    ORDER_LINE }|--|| PRODUCT : references
+    ORDER_LINE {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int quantity
+        decimal unit_price
+        decimal discount
+    }
+
+    PRODUCT ||--o{ PRODUCT_VARIANT : "has variants"
+    PRODUCT {
+        uuid id PK
+        uuid category_id FK
+        string name
+        text description
+        boolean active
+        date launched_at
+    }
+
+    PRODUCT_VARIANT {
+        uuid id PK
+        uuid product_id FK
+        string sku UK
+        string color
+        string size
+        decimal price
+        int stock_count
+    }
+
+    CATEGORY ||--o{ PRODUCT : categorizes
+    CATEGORY ||--o{ CATEGORY : "parent of"
+    CATEGORY {
+        uuid id PK
+        uuid parent_id FK
+        string name
+        int depth
+        string slug UK
+    }
+
+    ORDER ||--o| SHIPMENT : "shipped via"
+    SHIPMENT {
+        uuid id PK
+        uuid order_id FK
+        string carrier
+        string tracking_number
+        date shipped_at
+        date delivered_at
+        enum status "in_transit, delivered, returned"
+    }
+
+    CUSTOMER ||--o{ ADDRESS : "has addresses"
+    ADDRESS {
+        uuid id PK
+        uuid customer_id FK
+        string line1
+        string line2
+        string city
+        string state
+        string postal_code
+        string country
+        boolean is_default
+    }
+
+    ORDER }o--|| ADDRESS : "ships to"

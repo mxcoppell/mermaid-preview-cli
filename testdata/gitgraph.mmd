@@ -1,0 +1,37 @@
+gitGraph
+    commit id: "init"
+    commit id: "add CI"
+    branch feature/auth
+    checkout feature/auth
+    commit id: "login page"
+    commit id: "OAuth provider"
+    commit id: "session mgmt"
+    checkout main
+    branch feature/api
+    checkout feature/api
+    commit id: "REST endpoints"
+    commit id: "rate limiting"
+    checkout main
+    merge feature/auth id: "merge auth" tag: "v0.2.0"
+    checkout feature/api
+    commit id: "pagination"
+    commit id: "caching layer"
+    checkout main
+    merge feature/api id: "merge api" tag: "v0.3.0"
+    branch hotfix/security
+    checkout hotfix/security
+    commit id: "patch CVE-2026"
+    checkout main
+    merge hotfix/security id: "hotfix" tag: "v0.3.1"
+    branch feature/dashboard
+    checkout feature/dashboard
+    commit id: "charts"
+    commit id: "real-time ws"
+    commit id: "export PDF"
+    checkout main
+    branch release/1.0
+    checkout release/1.0
+    commit id: "bump version"
+    commit id: "changelog"
+    checkout main
+    merge release/1.0 id: "release" tag: "v1.0.0"

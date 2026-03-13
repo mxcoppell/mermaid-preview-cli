@@ -1,0 +1,45 @@
+gantt
+    title Product Launch Roadmap — Q2 2026
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+    todayMarker stroke-width:3px,stroke:#f66,opacity:0.8
+
+    section Discovery
+        User research           :done, research, 2026-04-01, 14d
+        Competitive analysis    :done, comp, 2026-04-01, 10d
+        Requirements doc        :done, reqs, after research, 7d
+        Design review           :milestone, m1, after reqs, 0d
+
+    section Design
+        Wireframes              :done, wire, after m1, 10d
+        Visual design           :active, visual, after wire, 14d
+        Prototype               :proto, after visual, 7d
+        Usability testing       :usability, after proto, 10d
+        Design signoff          :milestone, m2, after usability, 0d
+
+    section Engineering
+        API design              :api, after reqs, 14d
+        Database schema         :db, after api, 7d
+        Auth service            :auth, after db, 14d
+        Core API                :core, after db, 21d
+        Frontend scaffold       :scaffold, after m2, 7d
+        Feature: Dashboard      :dash, after scaffold, 14d
+        Feature: Settings       :settings, after scaffold, 10d
+        Feature: Notifications  :notif, after dash, 10d
+        Integration             :integration, after core, 14d
+        Code freeze             :milestone, m3, after integration, 0d
+
+    section Quality
+        Unit test coverage      :unit, after core, 14d
+        E2E test suite          :e2e, after integration, 10d
+        Performance testing     :perf, after e2e, 7d
+        Security audit          :sec, after m3, 10d
+        Bug bash                :bash, after sec, 5d
+        QA signoff              :milestone, m4, after bash, 0d
+
+    section Launch
+        Staging deploy          :staging, after m4, 3d
+        Beta rollout (10%)      :beta, after staging, 7d
+        Monitor & fix           :monitor, after beta, 7d
+        GA rollout              :crit, ga, after monitor, 3d
+        Launch announcement     :milestone, launch, after ga, 0d

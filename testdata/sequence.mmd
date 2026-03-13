@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant Client
+    participant Server
+    participant Database
+
+    Client->>Server: POST /api/data
+    Server->>Database: INSERT query
+    Database-->>Server: OK
+    Server-->>Client: 201 Created
+    Client->>Server: GET /api/data
+    Server->>Database: SELECT query
+    Database-->>Server: Results
+    Server-->>Client: 200 OK + data

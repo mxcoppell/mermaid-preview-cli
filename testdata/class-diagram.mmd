@@ -1,0 +1,97 @@
+classDiagram
+    class EventBus {
+        -Map~string, Handler[]~ handlers
+        -Logger logger
+        -Mutex mu
+        +Subscribe(event string, handler Handler) Unsubscribe
+        +Publish(event string, payload any) error
+        +PublishAsync(event string, payload any)
+        -dispatch(handler Handler, payload any)
+    }
+
+    class Handler {
+        <<interface>>
+        +Handle(ctx Context, payload any) error
+    }
+
+    class RetryHandler {
+        -Handler inner
+        -int maxRetries
+        -Duration backoff
+        +Handle(ctx Context, payload any) error
+        -retry(ctx Context, fn func() error) error
+    }
+
+    class BatchHandler {
+        -Handler inner
+        -int batchSize
+        -Duration flushInterval
+        -[]any buffer
+        -Mutex mu
+        +Handle(ctx Context, payload any) error
+        +Flush() error
+        -startFlusher()
+    }
+
+    class DeadLetterQueue {
+        -Store store
+        -Logger logger
+        +Push(event string, payload any, err error)
+        +Retry(id string) error
+        +List(limit int) []FailedEvent
+        +Purge(olderThan Duration) int
+    }
+
+    class FailedEvent {
+        +string ID
+        +string Event
+        +any Payload
+        +string Error
+        +Time FailedAt
+        +int RetryCount
+    }
+
+    class Middleware {
+        <<interface>>
+        +Wrap(next Handler) Handler
+    }
+
+    class LoggingMiddleware {
+        -Logger logger
+        +Wrap(next Handler) Handler
+    }
+
+    class MetricsMiddleware {
+        -Counter eventsTotal
+        -Histogram latency
+        +Wrap(next Handler) Handler
+    }
+
+    class CircuitBreaker {
+        -int failureThreshold
+        -Duration resetTimeout
+        -State state
+        -int failures
+        +Wrap(next Handler) Handler
+        -trip()
+        -reset()
+    }
+
+    class State {
+        <<enumeration>>
+        Closed
+        Open
+        HalfOpen
+    }
+
+    EventBus o-- Handler : subscribers
+    EventBus --> DeadLetterQueue : dead letters
+    Handler <|.. RetryHandler : implements
+    Handler <|.. BatchHandler : implements
+    Middleware <|.. LoggingMiddleware : implements
+    Middleware <|.. MetricsMiddleware : implements
+    Middleware <|.. CircuitBreaker : implements
+    CircuitBreaker --> State
+    RetryHandler --> Handler : wraps
+    BatchHandler --> Handler : wraps
+    DeadLetterQueue --> FailedEvent

@@ -85,7 +85,7 @@ func (fw *FileWatcher) Start(ctx context.Context) error {
 			if !ok {
 				return nil
 			}
-			fmt.Fprintf(os.Stderr, "mermaid-preview: watcher error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "mermaid-preview-cli: watcher error: %v\n", err)
 		}
 	}
 }

@@ -1,4 +1,4 @@
-module github.com/mxie/mermaid-preview
+module github.com/mxie/mermaid-preview-cli
 
 go 1.25.6
 

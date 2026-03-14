@@ -9,9 +9,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/mxie/mermaid-preview/internal/parser"
-	"github.com/mxie/mermaid-preview/internal/server"
-	"github.com/mxie/mermaid-preview/internal/watcher"
+	"github.com/mxie/mermaid-preview-cli/internal/parser"
+	"github.com/mxie/mermaid-preview-cli/internal/server"
+	"github.com/mxie/mermaid-preview-cli/internal/watcher"
 )
 
 // Run is the GUI process entry point. It reads the config from the temp file,
@@ -39,6 +39,7 @@ func Run(cfgPath string) error {
 		return fmt.Errorf("starting server: %w", err)
 	}
 	url := fmt.Sprintf("http://%s", addr)
+	fmt.Fprintf(os.Stderr, "mermaid-preview-cli: listening on %s (%s)\n", url, cfg.Filename)
 
 	// Start file watchers
 	if !cfg.NoWatch && len(cfg.WatchFiles) > 0 {
@@ -46,7 +47,7 @@ func Run(cfgPath string) error {
 			isMarkdown := strings.HasSuffix(file, ".md") || strings.HasSuffix(file, ".markdown")
 			absPath, err := filepath.Abs(file)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "mermaid-preview: resolve path error (%s): %v\n", file, err)
+				fmt.Fprintf(os.Stderr, "mermaid-preview-cli: resolve path error (%s): %v\n", file, err)
 				continue
 			}
 
@@ -56,14 +57,14 @@ func Run(cfgPath string) error {
 			} else {
 				w, err = watcher.NewFileWatcher(absPath)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "mermaid-preview: watcher error (%s): %v\n", file, err)
+					fmt.Fprintf(os.Stderr, "mermaid-preview-cli: watcher error (%s): %v\n", file, err)
 					continue
 				}
 			}
 
 			go func() {
 				if err := w.Start(ctx); err != nil {
-					fmt.Fprintf(os.Stderr, "mermaid-preview: watcher error: %v\n", err)
+					fmt.Fprintf(os.Stderr, "mermaid-preview-cli: watcher error: %v\n", err)
 				}
 			}()
 
@@ -113,6 +114,7 @@ func Run(cfgPath string) error {
 	w.Run()
 
 	// Clean up
+	fmt.Fprintf(os.Stderr, "mermaid-preview-cli: shutting down\n")
 	srv.Shutdown()
 	srv.Wait()
 	return nil

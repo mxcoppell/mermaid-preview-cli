@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mxie/mermaid-preview/internal/parser"
-	"github.com/mxie/mermaid-preview/web"
+	"github.com/mxie/mermaid-preview-cli/internal/parser"
+	"github.com/mxie/mermaid-preview-cli/web"
 )
 
 // Config holds server configuration.
@@ -24,7 +24,7 @@ type Config struct {
 	IsMarkdown bool
 }
 
-// Server is the HTTP server for mermaid-preview.
+// Server is the HTTP server for mermaid-preview-cli.
 type Server struct {
 	cfg        Config
 	mu         sync.RWMutex
@@ -77,7 +77,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 	go func() {
 		defer close(s.done)
 		if err := s.srv.Serve(ln); err != nil && err != http.ErrServerClosed {
-			fmt.Printf("mermaid-preview: server error: %v\n", err)
+			fmt.Printf("mermaid-preview-cli: server error: %v\n", err)
 		}
 	}()
 

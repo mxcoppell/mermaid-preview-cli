@@ -1,4 +1,4 @@
-// mermaid-preview frontend
+// mermaid-preview-cli frontend
 (function() {
     'use strict';
 
@@ -37,7 +37,7 @@
     // ─── Theme ────────────────────────────────────────────────────
     const themeOrder = ['system', 'light', 'dark'];
     let currentThemeIndex = themeOrder.indexOf(
-        localStorage.getItem('mermaid-preview-theme') || config.theme
+        localStorage.getItem('mermaid-preview-cli-theme') || config.theme
     );
     if (currentThemeIndex === -1) currentThemeIndex = 0;
 
@@ -52,7 +52,7 @@
     function applyTheme() {
         const theme = themeOrder[currentThemeIndex];
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('mermaid-preview-theme', theme);
+        localStorage.setItem('mermaid-preview-cli-theme', theme);
     }
 
     function cycleTheme() {
@@ -229,7 +229,7 @@
         var cx = rect.width / 2;
         var cy = rect.height / 2;
         var oldZoom = zoom;
-        zoom = Math.min(Math.max(zoom * factor, 0.1), 10);
+        zoom = Math.min(Math.max(zoom * factor, 0.1), 50);
         var scale = zoom / oldZoom;
         panX = cx - scale * (cx - panX);
         panY = cy - scale * (cy - panY);
@@ -244,7 +244,7 @@
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
         const oldZoom = zoom;
-        zoom = e.deltaY < 0 ? Math.min(zoom * 1.1, 10) : Math.max(zoom / 1.1, 0.1);
+        zoom = e.deltaY < 0 ? Math.min(zoom * 1.1, 50) : Math.max(zoom / 1.1, 0.1);
         const scale = zoom / oldZoom;
         panX = mouseX - scale * (mouseX - panX);
         panY = mouseY - scale * (mouseY - panY);
@@ -368,7 +368,7 @@
         const svgs = diagram.querySelectorAll('svg');
 
         svgs.forEach(function(svg) {
-            const textEls = svg.querySelectorAll('text, tspan');
+            const textEls = svg.querySelectorAll('text, tspan, span');
             textEls.forEach(function(textEl) {
                 if (textEl.textContent.toLowerCase().includes(lowerQuery)) {
                     let group = textEl.closest('.node, .cluster, .actor, .label');
@@ -467,6 +467,8 @@
     // ─── Auto-shape window (live reload) ────────────────────────────
     // Used on WebSocket updates — window is already visible, so just reshape.
     function autoShapeWindow() {
+        // If the user has manually zoomed/panned, preserve their view.
+        if (!isFitted) return;
         fitToViewport();
         if (typeof window.resizeWindow !== 'function') return;
         var dims = computeShapeDimensions();
@@ -495,54 +497,79 @@
         }
     });
 
+    function baseName() {
+        return (config.filename || 'diagram').replace(/\.[^.]+$/, '');
+    }
+
+    // Encode string as base64 (UTF-8 safe)
+    function toBase64(str) {
+        return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    // Encode ArrayBuffer as base64
+    function arrayBufferToBase64(buffer) {
+        var bytes = new Uint8Array(buffer);
+        var binary = '';
+        for (var i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+    }
+
     document.getElementById('export-svg').addEventListener('click', function() {
-        const svg = diagram.querySelector('svg');
+        var svg = diagram.querySelector('svg');
         if (!svg) return;
-        const s = new XMLSerializer().serializeToString(svg);
-        downloadFile(s, (config.filename || 'diagram').replace(/\.[^.]+$/, '') + '.svg', 'image/svg+xml');
         exportMenu.classList.add('hidden');
+        var s = new XMLSerializer().serializeToString(svg);
+
+        if (typeof window.saveFileDialog === 'function') {
+            window.saveFileDialog(baseName() + '.svg', toBase64(s), 'svg');
+        } else {
+            // Fallback for browser/E2E context
+            var blob = new Blob([s], { type: 'image/svg+xml' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = baseName() + '.svg';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
     });
 
     document.getElementById('export-png').addEventListener('click', function() {
-        const svg = diagram.querySelector('svg');
+        var svg = diagram.querySelector('svg');
         if (!svg) return;
-        const s = new XMLSerializer().serializeToString(svg);
-        const url = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml;charset=utf-8' }));
-        const img = new Image();
+        exportMenu.classList.add('hidden');
+        var s = new XMLSerializer().serializeToString(svg);
+        var url = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml;charset=utf-8' }));
+        var img = new Image();
         img.onload = function() {
-            const sc = window.devicePixelRatio || 1;
-            const c = document.createElement('canvas');
+            var sc = window.devicePixelRatio || 1;
+            var c = document.createElement('canvas');
             c.width = img.width * sc;
             c.height = img.height * sc;
-            const ctx = c.getContext('2d');
+            var ctx = c.getContext('2d');
             ctx.scale(sc, sc);
             ctx.drawImage(img, 0, 0);
             c.toBlob(function(blob) {
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = (config.filename || 'diagram').replace(/\.[^.]+$/, '') + '.png';
-                a.click();
-                URL.revokeObjectURL(a.href);
+                if (!blob) return;
+                var reader = new FileReader();
+                reader.onload = function() {
+                    if (typeof window.saveFileDialog === 'function') {
+                        window.saveFileDialog(baseName() + '.png', arrayBufferToBase64(reader.result), 'png');
+                    } else {
+                        var a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = baseName() + '.png';
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                    }
+                };
+                reader.readAsArrayBuffer(blob);
             });
             URL.revokeObjectURL(url);
         };
         img.src = url;
-        exportMenu.classList.add('hidden');
     });
-
-    document.getElementById('export-print').addEventListener('click', function() {
-        exportMenu.classList.add('hidden');
-        window.print();
-    });
-
-    function downloadFile(content, filename, mimeType) {
-        const blob = new Blob([content], { type: mimeType });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
-    }
 
     // ─── Keyboard Shortcuts ───────────────────────────────────────
     document.addEventListener('keydown', function(e) {

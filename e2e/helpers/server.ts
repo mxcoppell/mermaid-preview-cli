@@ -9,14 +9,14 @@ export interface ServerInstance {
 }
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const BINARY_PATH = path.join(PROJECT_ROOT, 'bin', 'mermaid-preview');
+const BINARY_PATH = path.join(PROJECT_ROOT, 'bin', 'mermaid-preview-cli');
 
 /**
  * Build the Go binary if it doesn't already exist.
  */
 function ensureBinary(): void {
   if (!fs.existsSync(BINARY_PATH)) {
-    execFileSync('go', ['build', '-o', 'bin/mermaid-preview', '.'], {
+    execFileSync('go', ['build', '-o', 'bin/mermaid-preview-cli', '.'], {
       cwd: PROJECT_ROOT,
       stdio: 'pipe',
     });
@@ -24,7 +24,7 @@ function ensureBinary(): void {
 }
 
 /**
- * Start the mermaid-preview server for a given file.
+ * Start the mermaid-preview-cli server for a given file.
  * Waits for the "listening on" line and extracts the port.
  */
 export async function startServer(
@@ -44,7 +44,7 @@ export async function startServer(
 }
 
 /**
- * Start the mermaid-preview server reading from stdin.
+ * Start the mermaid-preview-cli server reading from stdin.
  * Pipes the provided content into the process stdin.
  */
 export async function startServerWithStdin(
@@ -69,7 +69,7 @@ export async function startServerWithStdin(
 
 /**
  * Wait for the server to print its listening address on stderr.
- * Parses: "mermaid-preview: listening on http://127.0.0.1:XXXXX"
+ * Parses: "mermaid-preview-cli: listening on http://127.0.0.1:XXXXX"
  */
 function waitForListening(
   proc: ChildProcess,
@@ -84,7 +84,7 @@ function waitForListening(
     proc.stderr!.on('data', (chunk: Buffer) => {
       stderrBuf += chunk.toString();
       const match = stderrBuf.match(
-        /mermaid-preview: listening on (http:\/\/127\.0\.0\.1:(\d+))/,
+        /mermaid-preview-cli: listening on (http:\/\/127\.0\.0\.1:(\d+))/,
       );
       if (match) {
         clearTimeout(timeout);
@@ -112,22 +112,46 @@ function waitForListening(
 
 /**
  * Gracefully stop the server process.
+ *
+ * The CLI parent spawns a detached GUI child (`--internal-gui`) and exits
+ * immediately, so `server.process` is already dead by the time tests run.
+ * The real owner of the HTTP server + webview is the orphaned child process
+ * listening on the port. We find it via `lsof` and kill it directly.
  */
 export async function stopServer(server: ServerInstance): Promise<void> {
-  if (server.process.killed) return;
-
-  return new Promise<void>((resolve) => {
-    server.process.on('exit', () => resolve());
-    server.process.kill('SIGTERM');
-
-    // Force kill after 3 seconds
-    setTimeout(() => {
-      if (!server.process.killed) {
-        server.process.kill('SIGKILL');
+  // Kill the actual GUI process owning the port
+  try {
+    const pid = execFileSync('lsof', ['-ti', `tcp:${server.port}`], {
+      encoding: 'utf-8',
+    }).trim();
+    if (pid) {
+      // May be multiple PIDs (one per line) — kill them all
+      for (const p of pid.split('\n')) {
+        const n = parseInt(p, 10);
+        if (n > 0) {
+          try {
+            process.kill(n, 'SIGTERM');
+          } catch {
+            // already exited
+          }
+        }
       }
-      resolve();
-    }, 3_000);
-  });
+    }
+  } catch {
+    // lsof may fail if process already exited
+  }
+
+  // Also clean up the parent ChildProcess handle if still around
+  if (!server.process.killed) {
+    try {
+      server.process.kill('SIGTERM');
+    } catch {
+      // already exited
+    }
+  }
+
+  // Brief wait for cleanup
+  await new Promise<void>((resolve) => setTimeout(resolve, 200));
 }
 
 /**

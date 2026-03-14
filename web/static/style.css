@@ -397,45 +397,11 @@ body {
     pointer-events: none;
 }
 
-/* Search highlights */
+/* Search highlights — use filter for SVG <g> elements */
 .search-highlight {
-    outline: 3px solid var(--search-highlight);
-    outline-offset: 2px;
-    border-radius: 4px;
+    filter: drop-shadow(0 0 3px var(--search-highlight)) drop-shadow(0 0 6px var(--search-highlight));
 }
 
 .search-active {
-    outline-color: var(--search-active);
-    outline-width: 4px;
-    box-shadow: 0 0 12px var(--search-active);
-}
-
-/* ─── Print ────────────────────────────────────────────── */
-@media print {
-    .floating-toolbar,
-    .search-float,
-    .disconnected-float,
-    .error-overlay {
-        display: none !important;
-    }
-
-    body {
-        height: auto;
-        overflow: visible;
-    }
-
-    .diagram-container {
-        position: static;
-        overflow: visible;
-        height: auto;
-    }
-
-    .diagram-wrapper {
-        transform: none !important;
-    }
-
-    #diagram svg {
-        max-width: 100%;
-        height: auto;
-    }
+    filter: drop-shadow(0 0 4px var(--search-active)) drop-shadow(0 0 8px var(--search-active)) drop-shadow(0 0 16px var(--search-active));
 }

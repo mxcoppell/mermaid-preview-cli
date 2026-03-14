@@ -12,9 +12,9 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/mxie/mermaid-preview/internal/gui"
-	"github.com/mxie/mermaid-preview/internal/parser"
-	"github.com/mxie/mermaid-preview/internal/version"
+	"github.com/mxie/mermaid-preview-cli/internal/gui"
+	"github.com/mxie/mermaid-preview-cli/internal/parser"
+	"github.com/mxie/mermaid-preview-cli/internal/version"
 )
 
 const maxStdinSize = 10 * 1024 * 1024 // 10MB
@@ -35,12 +35,12 @@ func Execute() int {
 		if err == flag.ErrHelp {
 			return 0
 		}
-		fmt.Fprintf(os.Stderr, "mermaid-preview: error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: error: %v\n", err)
 		return 1
 	}
 
 	if err := run(cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "mermaid-preview: error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: error: %v\n", err)
 		return 2
 	}
 	return 0
@@ -50,7 +50,7 @@ func parseFlags(args []string, stdin *os.File) (Config, error) {
 	var cfg Config
 	var showVersion bool
 
-	fs := flag.NewFlagSet("mermaid-preview", flag.ContinueOnError)
+	fs := flag.NewFlagSet("mermaid-preview-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 
 	fs.IntVar(&cfg.Port, "port", 0, "")
@@ -78,7 +78,7 @@ func parseFlags(args []string, stdin *os.File) (Config, error) {
 	}
 
 	if showVersion {
-		fmt.Fprintf(os.Stdout, "mermaid-preview %s\n", version.Version)
+		fmt.Fprintf(os.Stdout, "mermaid-preview-cli %s\n", version.Version)
 		return Config{}, flag.ErrHelp
 	}
 
@@ -186,7 +186,7 @@ func spawnGUI(cfg gui.Config) error {
 
 func printHelp(w io.Writer) {
 	fmt.Fprint(w, `USAGE:
-    mermaid-preview [FLAGS] [FILE...]
+    mermaid-preview-cli [FLAGS] [FILE...]
 
 ARGUMENTS:
     FILE    One or more .mmd, .mermaid, or .md files
@@ -202,8 +202,8 @@ FLAGS:
     -h, --help            Print help
 
 STDIN:
-    echo "graph LR; A-->B" | mermaid-preview
-    cat diagram.mmd | mermaid-preview
+    echo "graph LR; A-->B" | mermaid-preview-cli
+    cat diagram.mmd | mermaid-preview-cli
 
 AGENT TOOL USAGE:
     Pipe mermaid source to stdin. The CLI opens a native preview window
@@ -211,10 +211,10 @@ AGENT TOOL USAGE:
     running from the CLI's perspective.
 
     Example from an LLM agent:
-        echo "graph TD; A-->B-->C" | mermaid-preview
+        echo "graph TD; A-->B-->C" | mermaid-preview-cli
 
     For file-based preview with live reload:
-        mermaid-preview diagram.mmd
+        mermaid-preview-cli diagram.mmd
 
 KEYBOARD SHORTCUTS (in preview window):
     Cmd/Ctrl+F  Search nodes      T  Toggle theme

@@ -51,7 +51,7 @@ test('live reloads when file changes', async ({ page }) => {
   await expect(page.locator('#diagram')).toContainText('Beta Node');
 });
 
-test('shows disconnected banner when server stops', async ({ page }) => {
+test('shows disconnected banner when WebSocket drops', async ({ page }) => {
   tempFile = path.join(os.tmpdir(), `e2e-disconnect-${Date.now()}.mmd`);
   fs.writeFileSync(
     tempFile,
@@ -61,15 +61,24 @@ test('shows disconnected banner when server stops', async ({ page }) => {
   server = await startServer(tempFile);
   await page.goto(server.url);
 
-  // Verify diagram renders
+  // Verify diagram renders and WebSocket is connected
   await expect(page.locator('#diagram svg')).toBeVisible();
 
   // Banner should be hidden initially
   const banner = page.locator('#disconnected-banner');
   await expect(banner).toHaveClass(/hidden/);
 
-  // Kill the server process
-  server.process.kill('SIGTERM');
+  // Kill the actual GUI child process listening on the server port.
+  // (The parent CLI process has already exited after spawning the GUI.)
+  const { execFileSync } = require('child_process');
+  try {
+    const pid = execFileSync('lsof', ['-ti', `tcp:${server.port}`], {
+      encoding: 'utf-8',
+    }).trim();
+    if (pid) process.kill(parseInt(pid), 'SIGKILL');
+  } catch {
+    // lsof may fail if process already exited
+  }
 
   // The disconnected banner should appear
   await expect(banner).not.toHaveClass(/hidden/, { timeout: 10_000 });

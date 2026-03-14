@@ -1,6 +1,6 @@
 # Go binary
 bin/
-mermaid-preview
+mermaid-preview-cli
 
 # Build / release
 dist/

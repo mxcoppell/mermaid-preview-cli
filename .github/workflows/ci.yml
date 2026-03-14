@@ -9,10 +9,10 @@ jobs:
         with:
           go-version: '1.23'
       - run: go test ./...
-      - run: go build -ldflags="-s -w" -o mermaid-preview .
+      - run: go build -ldflags="-s -w" -o mermaid-preview-cli .
       - name: Check binary size
         run: |
-          size=$(stat -f%z mermaid-preview 2>/dev/null || stat -c%s mermaid-preview)
+          size=$(stat -f%z mermaid-preview-cli 2>/dev/null || stat -c%s mermaid-preview-cli)
           echo "Binary size: $size bytes ($(echo "scale=1; $size/1048576" | bc)MB)"
           if [ "$size" -gt 10485760 ]; then echo "ERROR: binary exceeds 10MB" && exit 1; fi
   lint:
@@ -33,6 +33,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: go build -ldflags="-s -w" -o mermaid-preview .
+      - run: go build -ldflags="-s -w" -o mermaid-preview-cli .
       - run: cd e2e && npm ci && npx playwright install chromium
       - run: cd e2e && npx playwright test

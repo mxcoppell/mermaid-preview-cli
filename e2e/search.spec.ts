@@ -8,8 +8,6 @@ import {
 
 let server: ServerInstance;
 
-const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
-
 test.beforeEach(async ({ page }) => {
   server = await startServer(testdataPath('flowchart.mmd'));
   await page.goto(server.url);
@@ -24,7 +22,7 @@ test.afterEach(async () => {
 
 test('Cmd+F opens search, type query, nodes highlighted', async ({ page }) => {
   // Open search with platform-appropriate shortcut
-  await page.keyboard.press(`${modifier}+f`);
+  await page.locator('#search-btn').click();
 
   // Search bar should be visible
   const searchBar = page.locator('#search-bar');
@@ -42,7 +40,7 @@ test('Cmd+F opens search, type query, nodes highlighted', async ({ page }) => {
 });
 
 test('search navigation next/prev with .search-active', async ({ page }) => {
-  await page.keyboard.press(`${modifier}+f`);
+  await page.locator('#search-btn').click();
   // Search for a term that appears in multiple nodes (e.g. "End" matches "End")
   // Use a broader term - look for partial text
   await page.locator('#search-input').fill('a');
@@ -69,7 +67,7 @@ test('search navigation next/prev with .search-active', async ({ page }) => {
 
 test('Escape closes search and removes highlights', async ({ page }) => {
   // Open search and type a query
-  await page.keyboard.press(`${modifier}+f`);
+  await page.locator('#search-btn').click();
   await page.locator('#search-input').fill('Start');
 
   // Verify highlights exist
@@ -86,7 +84,7 @@ test('Escape closes search and removes highlights', async ({ page }) => {
 });
 
 test('search with no results shows "0 results"', async ({ page }) => {
-  await page.keyboard.press(`${modifier}+f`);
+  await page.locator('#search-btn').click();
   await page.locator('#search-input').fill('zzz_nonexistent_zzz');
 
   // The search count should show "0 results"

@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mxie/mermaid-preview/cmd"
-	"github.com/mxie/mermaid-preview/internal/gui"
+	"github.com/mxie/mermaid-preview-cli/cmd"
+	"github.com/mxie/mermaid-preview-cli/internal/gui"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 		if strings.HasPrefix(arg, "--internal-gui=") {
 			cfgPath := strings.TrimPrefix(arg, "--internal-gui=")
 			if err := gui.Run(cfgPath); err != nil {
-				fmt.Fprintf(os.Stderr, "mermaid-preview: error: %v\n", err)
+				fmt.Fprintf(os.Stderr, "mermaid-preview-cli: error: %v\n", err)
 				os.Exit(2)
 			}
 			return

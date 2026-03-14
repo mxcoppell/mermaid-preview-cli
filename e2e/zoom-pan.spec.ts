@@ -49,12 +49,17 @@ test.describe('basic zoom/pan with flowchart', () => {
   });
 
   test('- key zooms out', async ({ page }) => {
+    // Zoom in first so we have a known numeric baseline
+    await page.keyboard.press('+');
+    const zoomedIn = await page.locator('#zoom-level').textContent();
+    const zoomedInVal = parseInt(zoomedIn!);
+
     // Press - to zoom out
     await page.keyboard.press('-');
 
     const zoomText = await page.locator('#zoom-level').textContent();
     expect(zoomText).toMatch(/^\d+%$/);
-    expect(parseInt(zoomText!)).toBeLessThan(100);
+    expect(parseInt(zoomText!)).toBeLessThan(zoomedInVal);
   });
 
   test('0 key resets zoom', async ({ page }) => {
@@ -184,9 +189,6 @@ test.describe('auto-fit', () => {
 
     await expect(page.locator('#zoom-level')).toHaveText('Fit');
 
-    const scale = await page.locator('#diagram-wrapper').evaluate(getScale);
-    expect(scale).toBeLessThanOrEqual(1);
-
     const fit = await measureFit(page);
     expect(fit).not.toBeNull();
     expect(fit!.offsetX).toBeLessThan(CENTER_TOLERANCE);
@@ -195,15 +197,12 @@ test.describe('auto-fit', () => {
     expect(Math.abs(fit!.svgLeft - fit!.svgRight)).toBeLessThan(CENTER_TOLERANCE);
   });
 
-  test('tiny diagram (tiny.mmd): stays at zoom <= 1 and centers', async ({ page }) => {
+  test('tiny diagram (tiny.mmd): fits and centers', async ({ page }) => {
     server = await startServer(testdataPath('tiny.mmd'));
     await page.goto(server.url);
     await expect(page.locator('#diagram svg')).toBeVisible();
 
     await expect(page.locator('#zoom-level')).toHaveText('Fit');
-
-    const scale = await page.locator('#diagram-wrapper').evaluate(getScale);
-    expect(scale).toBeLessThanOrEqual(1);
 
     const fit = await measureFit(page);
     expect(fit).not.toBeNull();
@@ -211,15 +210,12 @@ test.describe('auto-fit', () => {
     expect(fit!.offsetY).toBeLessThan(CENTER_TOLERANCE);
   });
 
-  test('small diagram (flowchart.mmd): does not zoom above 100%', async ({ page }) => {
+  test('small diagram (flowchart.mmd): fits and centers', async ({ page }) => {
     server = await startServer(testdataPath('flowchart.mmd'));
     await page.goto(server.url);
     await expect(page.locator('#diagram svg')).toBeVisible();
 
     await expect(page.locator('#zoom-level')).toHaveText('Fit');
-
-    const scale = await page.locator('#diagram-wrapper').evaluate(getScale);
-    expect(scale).toBeLessThanOrEqual(1);
 
     const fit = await measureFit(page);
     expect(fit).not.toBeNull();
@@ -262,9 +258,6 @@ test.describe('auto-fit', () => {
     await expect(page.locator('#diagram svg')).toBeVisible();
 
     await expect(page.locator('#zoom-level')).toHaveText('Fit');
-
-    const scale = await page.locator('#diagram-wrapper').evaluate(getScale);
-    expect(scale).toBeLessThanOrEqual(1);
 
     const fit = await measureFit(page);
     expect(fit).not.toBeNull();

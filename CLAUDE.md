@@ -1,4 +1,4 @@
-# mermaid-preview
+# mermaid-preview-cli
 
 Lightweight CLI to preview Mermaid diagrams in a native frameless window (macOS only).
 
@@ -8,7 +8,7 @@ To display a mermaid diagram, pipe it to stdin. The CLI opens a native
 frameless window and exits immediately (exit code 0).
 
 ```bash
-echo "graph TD; A-->B-->C" | mermaid-preview
+echo "graph TD; A-->B-->C" | mermaid-preview-cli
 ```
 
 This is the recommended way for agents to show diagrams. The window
@@ -17,23 +17,23 @@ stays open after the CLI exits.
 You can also preview an existing file (this starts a server with live reload):
 
 ```bash
-mermaid-preview diagram.mmd
+mermaid-preview-cli diagram.mmd
 ```
 
 ## Quick Usage
 
 ```bash
 # Fire-and-forget preview (stdin — CLI exits immediately)
-echo "graph LR; A-->B" | mermaid-preview
+echo "graph LR; A-->B" | mermaid-preview-cli
 
 # Live preview with file watching
-mermaid-preview diagram.mmd
+mermaid-preview-cli diagram.mmd
 
 # Multiple files — each gets its own window
-mermaid-preview flow.mmd sequence.mmd arch.md
+mermaid-preview-cli flow.mmd sequence.mmd arch.md
 
 # Extracts ```mermaid blocks from markdown
-mermaid-preview README.md
+mermaid-preview-cli README.md
 ```
 
 ## Flags
@@ -55,12 +55,12 @@ mermaid-preview README.md
 
 ## Stderr Format
 
-All output is structured: `mermaid-preview: <message>`
+All output is structured: `mermaid-preview-cli: <message>`
 
 ```
-mermaid-preview: listening on http://127.0.0.1:52341 (flow.mmd)  # server mode
-mermaid-preview: shutting down
-mermaid-preview: error: <message>                                # exit code 1 or 2
+mermaid-preview-cli: listening on http://127.0.0.1:52341 (flow.mmd)  # server mode
+mermaid-preview-cli: shutting down
+mermaid-preview-cli: error: <message>                                # exit code 1 or 2
 ```
 
 ## Architecture
@@ -73,20 +73,20 @@ runs an HTTP server + webview event loop.
 ## Build & Test
 
 ```bash
-go build -ldflags="-s -w" -o bin/mermaid-preview .   # build
+go build -ldflags="-s -w" -o bin/mermaid-preview-cli .   # build
 go test ./...                                         # unit tests
 cd e2e && npm ci && npx playwright test               # E2E tests
 ```
 
 ## Agent Skill
 
-A Claude Code skill is provided at `skills/mermaid-preview.md`. To install it
+A Claude Code skill is provided at `skills/mermaid-preview-cli.md`. To install it
 for use across projects, symlink or copy it into your Claude Code skills
 directory:
 
 ```bash
 # Symlink (recommended — stays up to date)
-ln -s "$(pwd)/skills/mermaid-preview.md" ~/.claude/skills/mermaid-preview.md
+ln -s "$(pwd)/skills/mermaid-preview-cli.md" ~/.claude/skills/mermaid-preview-cli.md
 ```
 
 Once installed, Claude Code will automatically activate the skill when you ask

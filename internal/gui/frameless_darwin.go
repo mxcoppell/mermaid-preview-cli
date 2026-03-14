@@ -4,10 +4,11 @@ package gui
 
 /*
 #cgo CFLAGS: -x objective-c
-#cgo LDFLAGS: -framework Cocoa -framework QuartzCore
+#cgo LDFLAGS: -framework Cocoa -framework QuartzCore -framework UniformTypeIdentifiers
 
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 static void applyFrameless(void *window) {
     NSWindow *nsWindow = (NSWindow *)window;
@@ -101,6 +102,46 @@ void guiMoveWindowBy(void *window, int dx, int dy) {
     frame.origin.y -= dy;
     [nsWindow setFrameOrigin:frame.origin];
 }
+// guiSaveFile shows a native NSSavePanel and writes data to the chosen path.
+// Returns 1 if the file was saved, 0 if cancelled.
+int guiSaveFile(void *window, const char *suggestedName, const void *data, int dataLen, const char *extension) {
+    __block int result = 0;
+
+    // Must run on main thread synchronously so the Go binding can return the result.
+    dispatch_block_t work = ^{
+        NSSavePanel *panel = [NSSavePanel savePanel];
+        [panel setNameFieldStringValue:[NSString stringWithUTF8String:suggestedName]];
+        [panel setCanCreateDirectories:YES];
+
+        // Set allowed file type
+        NSString *ext = [NSString stringWithUTF8String:extension];
+        if ([ext isEqualToString:@"svg"]) {
+            panel.allowedContentTypes = @[UTTypeSVG];
+        } else if ([ext isEqualToString:@"png"]) {
+            panel.allowedContentTypes = @[UTTypePNG];
+        }
+
+        NSWindow *nsWindow = (NSWindow *)window;
+        NSModalResponse response = [panel runModal];
+        // Re-focus the webview window after the dialog closes.
+        [nsWindow makeKeyAndOrderFront:nil];
+
+        if (response == NSModalResponseOK) {
+            NSURL *url = [panel URL];
+            NSData *nsData = [NSData dataWithBytes:data length:dataLen];
+            [nsData writeToURL:url atomically:YES];
+            result = 1;
+        }
+    };
+
+    if ([NSThread isMainThread]) {
+        work();
+    } else {
+        dispatch_sync(dispatch_get_main_queue(), work);
+    }
+
+    return result;
+}
 */
 import "C"
 
@@ -124,4 +165,18 @@ func centerWindow(windowHandle unsafe.Pointer) {
 
 func moveWindowBy(windowHandle unsafe.Pointer, dx, dy int) {
 	C.guiMoveWindowBy(windowHandle, C.int(dx), C.int(dy))
+}
+
+func saveFile(windowHandle unsafe.Pointer, suggestedName string, data []byte, extension string) bool {
+	cName := C.CString(suggestedName)
+	defer C.free(unsafe.Pointer(cName))
+	cExt := C.CString(extension)
+	defer C.free(unsafe.Pointer(cExt))
+
+	var dataPtr unsafe.Pointer
+	if len(data) > 0 {
+		dataPtr = unsafe.Pointer(&data[0])
+	}
+
+	return C.guiSaveFile(windowHandle, cName, dataPtr, C.int(len(data)), cExt) == 1
 }

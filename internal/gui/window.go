@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"encoding/base64"
 	"sync"
 
 	webview "github.com/webview/webview_go"
@@ -14,7 +15,7 @@ func createWindow(url string) webview.WebView {
 	// Move offscreen IMMEDIATELY — before SetTitle/SetSize/Navigate
 	// can trigger any visible window appearance.
 	hideWindowOffscreen(w.Window())
-	w.SetTitle("mermaid-preview")
+	w.SetTitle("mermaid-preview-cli")
 	w.SetSize(1400, 1000, webview.HintNone)
 
 	// Auto-size binding with dampening
@@ -57,6 +58,17 @@ func createWindow(url string) webview.WebView {
 		w.Dispatch(func() {
 			showWindow(w.Window(), width, height)
 		})
+	})
+
+	// Save file with native NSSavePanel dialog.
+	// JS passes base64-encoded data to avoid UTF-8 issues with binary content.
+	// The CGO function handles main thread dispatch internally via dispatch_sync.
+	w.Bind("saveFileDialog", func(suggestedName, base64Data, extension string) bool {
+		data, err := base64.StdEncoding.DecodeString(base64Data)
+		if err != nil {
+			return false
+		}
+		return saveFile(w.Window(), suggestedName, data, extension)
 	})
 
 	w.Navigate(url)

@@ -10,9 +10,9 @@ Designed for AI coding agents (Claude Code, etc.) to visualize diagrams mid-conv
 
 ## Why
 
-- **Agents can't open browsers.** This gives them a native window with one pipe.
-- **Zero friction.** `echo "graph LR; A-->B" | mermaid-preview-cli` — done.
-- **Fire-and-forget.** CLI exits immediately, window stays open. No cleanup.
+- **One pipe, one window.** `echo "graph LR; A-->B" | mermaid-preview-cli` — done.
+- **Fire-and-forget.** CLI exits immediately, window stays open. No cleanup needed.
+- **No dependencies.** Single binary — no browser, no Node.js, no internet.
 - **Live reload.** Point at a file, edit it, see changes instantly.
 
 ## Install

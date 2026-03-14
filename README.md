@@ -103,16 +103,13 @@ Pipe any mermaid source to stdin. The CLI renders it and exits immediately — t
 
 ### Install the skill
 
-**If installed via Homebrew:**
-
 ```bash
-ln -s "$(brew --prefix)/share/mermaid-preview-cli/mermaid-preview-cli.md" ~/.claude/skills/mermaid-preview-cli.md
-```
+# Clone the repo (or use an existing checkout)
+git clone https://github.com/mxcoppell/mermaid-preview-cli.git
 
-**If cloned from source:**
-
-```bash
-ln -s "$(pwd)/skills/mermaid-preview-cli.md" ~/.claude/skills/mermaid-preview-cli.md
+# Symlink the skill (stays up to date with git pull)
+mkdir -p ~/.claude/skills/mermaid-preview-cli
+ln -s "$(pwd)/mermaid-preview-cli/skills/mermaid-preview-cli.md" ~/.claude/skills/mermaid-preview-cli/SKILL.md
 ```
 
 Once installed, asking Claude Code to "show this as a diagram" or "visualize this flow" will automatically pipe Mermaid source through `mermaid-preview-cli`.

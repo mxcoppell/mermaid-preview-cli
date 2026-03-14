@@ -86,7 +86,8 @@ directory:
 
 ```bash
 # Symlink (recommended — stays up to date)
-ln -s "$(pwd)/skills/mermaid-preview-cli.md" ~/.claude/skills/mermaid-preview-cli.md
+mkdir -p ~/.claude/skills/mermaid-preview-cli
+ln -s "$(pwd)/skills/mermaid-preview-cli.md" ~/.claude/skills/mermaid-preview-cli/SKILL.md
 ```
 
 Once installed, Claude Code will automatically activate the skill when you ask

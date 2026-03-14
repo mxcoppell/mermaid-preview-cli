@@ -9,9 +9,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/mxie/mermaid-preview-cli/internal/parser"
-	"github.com/mxie/mermaid-preview-cli/internal/server"
-	"github.com/mxie/mermaid-preview-cli/internal/watcher"
+	"github.com/mxcoppell/mermaid-preview-cli/internal/parser"
+	"github.com/mxcoppell/mermaid-preview-cli/internal/server"
+	"github.com/mxcoppell/mermaid-preview-cli/internal/watcher"
 )
 
 // Run is the GUI process entry point. It reads the config from the temp file,

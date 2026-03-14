@@ -4,7 +4,7 @@ builds:
   - main: .
     binary: mermaid-preview-cli
     ldflags:
-      - -s -w -X github.com/mxie/mermaid-preview-cli/internal/version.Version={{.Version}}
+      - -s -w -X github.com/mxcoppell/mermaid-preview-cli/internal/version.Version={{.Version}}
     goos:
       - darwin
     goarch:
@@ -29,10 +29,10 @@ changelog:
 
 brews:
   - repository:
-      owner: mxie
+      owner: mxcoppell
       name: homebrew-tap
     name: mermaid-preview-cli
-    homepage: https://github.com/mxie/mermaid-preview-cli
+    homepage: https://github.com/mxcoppell/mermaid-preview-cli
     description: CLI tool for previewing Mermaid diagrams
     license: MIT
     install: |

@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mxie/mermaid-preview-cli/cmd"
-	"github.com/mxie/mermaid-preview-cli/internal/gui"
+	"github.com/mxcoppell/mermaid-preview-cli/cmd"
+	"github.com/mxcoppell/mermaid-preview-cli/internal/gui"
 )
 
 func main() {

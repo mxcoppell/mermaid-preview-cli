@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mxie/mermaid-preview-cli/internal/parser"
-	"github.com/mxie/mermaid-preview-cli/web"
+	"github.com/mxcoppell/mermaid-preview-cli/internal/parser"
+	"github.com/mxcoppell/mermaid-preview-cli/web"
 )
 
 // Config holds server configuration.

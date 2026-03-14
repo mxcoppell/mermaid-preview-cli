@@ -12,9 +12,9 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/mxie/mermaid-preview-cli/internal/gui"
-	"github.com/mxie/mermaid-preview-cli/internal/parser"
-	"github.com/mxie/mermaid-preview-cli/internal/version"
+	"github.com/mxcoppell/mermaid-preview-cli/internal/gui"
+	"github.com/mxcoppell/mermaid-preview-cli/internal/parser"
+	"github.com/mxcoppell/mermaid-preview-cli/internal/version"
 )
 
 const maxStdinSize = 10 * 1024 * 1024 // 10MB

@@ -9,12 +9,12 @@ A single Go binary with embedded mermaid.js that opens a frameless webview windo
 ### Homebrew (macOS)
 
 ```bash
-brew install mxie/tap/mermaid-preview-cli
+brew install mxcoppell/tap/mermaid-preview-cli
 ```
 
 ### Download binary
 
-Grab the latest release from [GitHub Releases](https://github.com/mxie/mermaid-preview-cli/releases).
+Grab the latest release from [GitHub Releases](https://github.com/mxcoppell/mermaid-preview-cli/releases).
 
 ### Build from source
 

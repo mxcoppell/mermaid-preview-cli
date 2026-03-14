@@ -1,8 +1,19 @@
 # mermaid-preview-cli
 
-Lightweight CLI to preview Mermaid diagrams in a native frameless window (macOS).
+Lightweight CLI for AI agents and developers to preview Mermaid diagrams in a native frameless window (macOS).
 
-A single Go binary with embedded mermaid.js that opens a frameless webview window to render diagrams. Supports live reload on file changes. No browser dependency, no internet, no Node.js.
+<p align="center">
+  <img src="assets/claude-code-sample.png" alt="Claude Code generating a Mermaid diagram rendered by mermaid-preview-cli" width="800">
+</p>
+
+A single Go binary with embedded mermaid.js — no browser, no internet, no Node.js. Designed for AI coding agents (Claude Code, etc.) to visualize diagrams mid-conversation via stdin, and for developers to live-preview diagram files.
+
+## Why
+
+- **Agents can't open browsers.** This gives them a native window with one pipe.
+- **Zero friction.** `echo "graph LR; A-->B" | mermaid-preview-cli` — done.
+- **Fire-and-forget.** CLI exits immediately, window stays open. No cleanup.
+- **Live reload.** Point at a file, edit it, see changes instantly.
 
 ## Install
 
@@ -40,21 +51,14 @@ mermaid-preview-cli README.md
 
 ## Use Cases
 
-### Coding Agents — Inline Visualization
-
-Fire-and-forget stdin mode for agents. Pipe diagram source, the CLI exits immediately, and the window stays open. Ideal for visualizing architecture, data flows, and sequences mid-conversation. For best results, run in a subagent to keep the main conversation context clean.
-
-### Live Preview While Editing
-
-Point at a `.mmd` or `.mermaid` file for live reload. Changes are reflected instantly (100ms debounce). Supports fsnotify (default) or stat-based polling (`--poll`).
-
-### Markdown Documentation
-
-Extracts ` ```mermaid ` fenced blocks from `.md` files automatically. Multiple blocks render stacked with labels.
-
-### Side-by-Side Comparison
-
-Pass multiple files — each opens in its own window. Useful for comparing diagram variants or reviewing changes.
+| Scenario | How |
+|----------|-----|
+| **Agent visualizes architecture mid-chat** | Agent pipes Mermaid to stdin → window appears, agent continues |
+| **"Show me the data flow"** | Agent generates diagram, runs in subagent — no context wasted |
+| **Debug a state machine** | Agent renders current vs expected states in side-by-side windows |
+| **Review PR diagrams** | `mermaid-preview-cli docs/*.mmd` — each file gets its own window |
+| **Live-edit a diagram** | `mermaid-preview-cli flow.mmd` — instant reload on save |
+| **Preview docs** | Extracts ` ```mermaid ` blocks from markdown automatically |
 
 ## Supported Files
 

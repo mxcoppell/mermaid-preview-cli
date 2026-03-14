@@ -5,6 +5,8 @@ builds:
     binary: mermaid-preview-cli
     ldflags:
       - -s -w -X github.com/mxcoppell/mermaid-preview-cli/internal/version.Version={{.Version}}
+    env:
+      - CGO_ENABLED=1
     goos:
       - darwin
     goarch:
@@ -12,7 +14,7 @@ builds:
       - arm64
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
@@ -37,4 +39,3 @@ brews:
     license: MIT
     install: |
       bin.install "mermaid-preview-cli"
-

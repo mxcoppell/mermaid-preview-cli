@@ -17,6 +17,8 @@ archives:
   - formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - skills/mermaid-preview-cli.md
 
 checksum:
   name_template: checksums.txt
@@ -39,3 +41,4 @@ brews:
     license: MIT
     install: |
       bin.install "mermaid-preview-cli"
+      (share/"mermaid-preview-cli").install "skills/mermaid-preview-cli.md"

@@ -99,10 +99,19 @@ Pipe any mermaid source to stdin. The CLI renders it and exits immediately — t
 
 ## Agent Integration
 
-`mermaid-preview-cli` includes a Claude Code skill that lets agents automatically discover and use it when you ask to visualize diagrams. The skill file provides full agent-facing documentation including use cases and recommended patterns.
+`mermaid-preview-cli` includes a Claude Code skill that lets agents automatically discover and use it when you ask to visualize diagrams.
+
+### Install the skill
+
+**If installed via Homebrew:**
 
 ```bash
-# Install the skill (symlink stays up to date)
+ln -s "$(brew --prefix)/share/mermaid-preview-cli/mermaid-preview-cli.md" ~/.claude/skills/mermaid-preview-cli.md
+```
+
+**If cloned from source:**
+
+```bash
 ln -s "$(pwd)/skills/mermaid-preview-cli.md" ~/.claude/skills/mermaid-preview-cli.md
 ```
 

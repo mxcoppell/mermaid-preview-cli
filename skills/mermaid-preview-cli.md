@@ -97,7 +97,7 @@ mermaid-preview-cli before.mmd after.mmd
 
 ### Export
 
-The toolbar provides SVG, PNG, and Print export options.
+The toolbar provides SVG and PNG export via a native save dialog.
 
 ## Diagram Styling
 

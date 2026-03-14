@@ -1,39 +1,32 @@
 package cmd
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
+	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"golang.org/x/term"
 
-	"github.com/mxie/mermaid-preview/internal/browser"
+	"github.com/mxie/mermaid-preview/internal/gui"
 	"github.com/mxie/mermaid-preview/internal/parser"
-	"github.com/mxie/mermaid-preview/internal/server"
 	"github.com/mxie/mermaid-preview/internal/version"
-	"github.com/mxie/mermaid-preview/internal/watcher"
 )
 
 const maxStdinSize = 10 * 1024 * 1024 // 10MB
 
 // Config holds all CLI configuration.
 type Config struct {
-	Port      int
-	NoBrowser bool
-	Theme     string
-	NoWatch   bool
-	Poll      time.Duration
-	Once      bool
-	Serve     bool
-	Files     []string
-	IsStdin   bool
+	Port    int
+	Theme   string
+	NoWatch bool
+	Poll    time.Duration
+	Files   []string
+	IsStdin bool
 }
 
 func Execute() int {
@@ -62,15 +55,11 @@ func parseFlags(args []string, stdin *os.File) (Config, error) {
 
 	fs.IntVar(&cfg.Port, "port", 0, "")
 	fs.IntVar(&cfg.Port, "p", 0, "")
-	fs.BoolVar(&cfg.NoBrowser, "no-browser", false, "")
-	fs.BoolVar(&cfg.NoBrowser, "b", false, "")
 	fs.StringVar(&cfg.Theme, "theme", "system", "")
 	fs.StringVar(&cfg.Theme, "t", "system", "")
 	fs.BoolVar(&cfg.NoWatch, "no-watch", false, "")
 	fs.BoolVar(&cfg.NoWatch, "w", false, "")
 	fs.DurationVar(&cfg.Poll, "poll", 0, "")
-	fs.BoolVar(&cfg.Once, "once", false, "")
-	fs.BoolVar(&cfg.Serve, "serve", false, "")
 	fs.BoolVar(&showVersion, "version", false, "")
 	fs.BoolVar(&showVersion, "v", false, "")
 
@@ -107,12 +96,7 @@ func parseFlags(args []string, stdin *os.File) (Config, error) {
 	} else if !term.IsTerminal(int(stdin.Fd())) {
 		cfg.IsStdin = true
 		cfg.NoWatch = true
-		cfg.Files = []string{"<stdin>"}
-		// Stdin defaults to --once (fire-and-forget, no server).
-		// --serve overrides this to keep the server running.
-		if !cfg.Serve {
-			cfg.Once = true
-		}
+		cfg.Files = []string{""}
 	} else {
 		printHelp(os.Stderr)
 		return Config{}, fmt.Errorf("no input file specified")
@@ -121,122 +105,82 @@ func parseFlags(args []string, stdin *os.File) (Config, error) {
 	return cfg, nil
 }
 
-// startInstance starts a server + watcher + browser for a single file.
-func startInstance(ctx context.Context, cfg Config, file string) (*server.Server, error) {
-	// Read initial content
-	var content string
-	if cfg.IsStdin {
-		data, err := io.ReadAll(io.LimitReader(os.Stdin, maxStdinSize))
-		if err != nil {
-			return nil, fmt.Errorf("reading stdin: %w", err)
-		}
-		content = string(data)
-	} else {
-		data, err := os.ReadFile(file)
-		if err != nil {
-			return nil, fmt.Errorf("reading %s: %w", file, err)
-		}
-		content = string(data)
-	}
-
-	isMarkdown := strings.HasSuffix(file, ".md") || strings.HasSuffix(file, ".markdown")
-
-	srv := server.New(server.Config{
-		Port:       cfg.Port,
-		Theme:      cfg.Theme,
-		Content:    content,
-		Filename:   filepath.Base(file),
-		IsMarkdown: isMarkdown,
-	})
-
-	addr, err := srv.Start(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("starting server for %s: %w", file, err)
-	}
-	url := fmt.Sprintf("http://%s", addr)
-	fmt.Fprintf(os.Stderr, "mermaid-preview: listening on %s (%s)\n", url, filepath.Base(file))
-
-	// Start file watcher
-	if !cfg.NoWatch && !cfg.IsStdin {
-		absPath, err := filepath.Abs(file)
-		if err != nil {
-			return nil, fmt.Errorf("resolving path: %w", err)
-		}
-
-		var w watcher.Watcher
-		if cfg.Poll > 0 {
-			w = watcher.NewPollWatcher(absPath, cfg.Poll)
-		} else {
-			w, err = watcher.NewFileWatcher(absPath)
-			if err != nil {
-				return nil, fmt.Errorf("setting up watcher for %s: %w", file, err)
-			}
-		}
-
-		go func() {
-			if err := w.Start(ctx); err != nil {
-				fmt.Fprintf(os.Stderr, "mermaid-preview: watcher error (%s): %v\n", file, err)
-			}
-		}()
-
-		go func() {
-			for newContent := range w.Content() {
-				if isMarkdown {
-					blocks := parser.ExtractMermaidBlocks(newContent)
-					srv.UpdateContent(newContent, blocks)
-				} else {
-					srv.UpdateContent(newContent, nil)
-				}
-			}
-		}()
-	}
-
-	if !cfg.NoBrowser {
-		if err := browser.Open(url); err != nil {
-			fmt.Fprintf(os.Stderr, "mermaid-preview: could not open browser for %s: %v\n", file, err)
-		}
-	}
-
-	return srv, nil
-}
-
 func run(cfg Config) error {
-	// --once mode: write self-contained HTML, open browser, exit immediately
-	if cfg.Once {
-		return runOnce(cfg)
-	}
-
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
-	servers := make([]*server.Server, 0, len(cfg.Files))
-
 	for _, file := range cfg.Files {
-		srv, err := startInstance(ctx, cfg, file)
-		if err != nil {
-			// Shut down any servers we already started
-			for _, s := range servers {
-				s.Shutdown()
+		// Read content
+		var content string
+		if cfg.IsStdin {
+			data, err := io.ReadAll(io.LimitReader(os.Stdin, maxStdinSize))
+			if err != nil {
+				return fmt.Errorf("reading stdin: %w", err)
 			}
+			content = string(data)
+		} else {
+			data, err := os.ReadFile(file)
+			if err != nil {
+				return fmt.Errorf("reading %s: %w", file, err)
+			}
+			content = string(data)
+		}
+
+		isMarkdown := strings.HasSuffix(file, ".md") || strings.HasSuffix(file, ".markdown")
+
+		// For markdown, validate that there are mermaid blocks
+		if isMarkdown {
+			blocks := parser.ExtractMermaidBlocks(content)
+			if len(blocks) == 0 {
+				return fmt.Errorf("no mermaid diagram blocks found in %s", file)
+			}
+		}
+
+		// Build watch file list
+		var watchFiles []string
+		if !cfg.NoWatch && !cfg.IsStdin {
+			absPath, err := filepath.Abs(file)
+			if err != nil {
+				return fmt.Errorf("resolving path: %w", err)
+			}
+			watchFiles = []string{absPath}
+		}
+
+		// Spawn GUI process
+		guiCfg := gui.Config{
+			Port:       cfg.Port,
+			Theme:      cfg.Theme,
+			Content:    content,
+			Filename:   filepath.Base(file),
+			IsMarkdown: isMarkdown,
+			WatchFiles: watchFiles,
+			Poll:       cfg.Poll,
+			NoWatch:    cfg.NoWatch,
+		}
+
+		if err := spawnGUI(guiCfg); err != nil {
 			return err
 		}
-		servers = append(servers, srv)
 	}
 
-	// Wait for all servers to shut down.
-	// Any one shutting down (Esc, tab close) cancels the shared context,
-	// which triggers the rest to shut down too.
-	var wg sync.WaitGroup
-	wg.Add(len(servers))
-	for _, srv := range servers {
-		go func(s *server.Server) {
-			defer wg.Done()
-			s.Wait()
-		}(srv)
-	}
-	wg.Wait()
+	return nil
+}
 
-	fmt.Fprintf(os.Stderr, "mermaid-preview: shutting down\n")
+func spawnGUI(cfg gui.Config) error {
+	tmpPath, err := gui.WriteConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("writing GUI config: %w", err)
+	}
+
+	exePath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("finding executable: %w", err)
+	}
+
+	cmd := exec.Command(exePath, "--internal-gui="+tmpPath)
+	cmd.Stderr = os.Stderr
+	if err := cmd.Start(); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("spawning GUI: %w", err)
+	}
+
 	return nil
 }
 
@@ -251,35 +195,31 @@ ARGUMENTS:
 
 FLAGS:
     -p, --port PORT       Server port (default: auto-select available)
-    -b, --no-browser      Don't auto-open browser
     -t, --theme THEME     dark | light | system (default: system)
     -w, --no-watch        Disable file watching
-        --poll INTERVAL   Polling fallback for WSL/Docker/NFS (e.g. 500ms)
-        --once            Render to a self-contained HTML file and exit
-                          (no server, no live reload — the default for stdin)
-        --serve           Force server mode for stdin (override --once default)
+        --poll INTERVAL   Stat-based polling fallback (e.g. 500ms)
     -v, --version         Print version
     -h, --help            Print help
 
-STDIN (fire-and-forget by default — CLI exits immediately):
+STDIN:
     echo "graph LR; A-->B" | mermaid-preview
     cat diagram.mmd | mermaid-preview
 
 AGENT TOOL USAGE:
-    Pipe mermaid source to stdin. The CLI renders a self-contained HTML
-    preview, opens the browser, and exits immediately (exit code 0).
-    No server process is left running. No temp files need cleanup.
+    Pipe mermaid source to stdin. The CLI opens a native preview window
+    and exits immediately (exit code 0). No server process is left
+    running from the CLI's perspective.
 
     Example from an LLM agent:
         echo "graph TD; A-->B-->C" | mermaid-preview
 
-    For file-based preview with live reload (stays running):
+    For file-based preview with live reload:
         mermaid-preview diagram.mmd
 
-KEYBOARD SHORTCUTS (in browser):
+KEYBOARD SHORTCUTS (in preview window):
     Cmd/Ctrl+F  Search nodes      T  Toggle theme
     +/-         Zoom in/out       0  Reset zoom
-    Esc         Close search or quit server (server mode only)
+    Esc         Close window      Space  Close window
 
 EXIT CODES: 0 = success, 1 = argument error, 2 = runtime error
 `)

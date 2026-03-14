@@ -1,11 +1,11 @@
 ---
 name: mermaid-preview
-description: Preview, visualize, render, or display Mermaid diagrams in the browser using the mermaid-preview CLI
+description: Preview, visualize, render, or display Mermaid diagrams in a native frameless window using the mermaid-preview CLI
 ---
 
 # Mermaid Preview
 
-Use the `mermaid-preview` CLI to display Mermaid diagrams in the user's browser.
+Use the `mermaid-preview` CLI to display Mermaid diagrams in a native frameless window.
 
 ## When to Use
 
@@ -13,7 +13,7 @@ Activate when the user asks to **visualize**, **preview**, **display**, **render
 
 ## Primary Usage (fire-and-forget)
 
-Pipe diagram source to stdin. The CLI opens a browser window and exits immediately — no server, no cleanup.
+Pipe diagram source to stdin. The CLI opens a native window and exits immediately — no cleanup needed.
 
 ```bash
 echo 'graph TD
@@ -24,7 +24,7 @@ echo 'graph TD
     D --> E' | mermaid-preview
 ```
 
-This is the recommended approach for agents. The browser window is self-contained and stays open after the CLI exits (exit code 0).
+This is the recommended approach for agents. The window stays open after the CLI exits (exit code 0).
 
 ## File Preview (live reload)
 
@@ -39,8 +39,8 @@ mermaid-preview diagram.mmd
 | Flag | Purpose |
 |------|---------|
 | `--theme dark\|light\|system` | Set color theme |
-| `--once` | Force fire-and-forget mode (default for stdin) |
-| `--no-browser` | Don't auto-open browser (useful for testing) |
+| `--no-watch` | Disable file watching |
+| `--poll INTERVAL` | Stat-based polling fallback (e.g. `500ms`) |
 
 ## Markdown Support
 

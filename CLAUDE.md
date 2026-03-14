@@ -1,18 +1,18 @@
 # mermaid-preview
 
-Lightweight CLI to preview Mermaid diagrams in the browser.
+Lightweight CLI to preview Mermaid diagrams in a native frameless window (macOS only).
 
 ## For LLM Agents
 
-To display a mermaid diagram, pipe it to stdin. The CLI opens a browser
-window and exits immediately (exit code 0). No server is left running.
+To display a mermaid diagram, pipe it to stdin. The CLI opens a native
+frameless window and exits immediately (exit code 0).
 
 ```bash
 echo "graph TD; A-->B-->C" | mermaid-preview
 ```
 
-This is the recommended way for agents to show diagrams. The browser
-window is self-contained and stays open after the CLI exits.
+This is the recommended way for agents to show diagrams. The window
+stays open after the CLI exits.
 
 You can also preview an existing file (this starts a server with live reload):
 
@@ -26,7 +26,7 @@ mermaid-preview diagram.mmd
 # Fire-and-forget preview (stdin — CLI exits immediately)
 echo "graph LR; A-->B" | mermaid-preview
 
-# Live preview with file watching (CLI stays running)
+# Live preview with file watching
 mermaid-preview diagram.mmd
 
 # Multiple files — each gets its own window
@@ -34,12 +34,6 @@ mermaid-preview flow.mmd sequence.mmd arch.md
 
 # Extracts ```mermaid blocks from markdown
 mermaid-preview README.md
-
-# Force fire-and-forget mode for files
-mermaid-preview --once diagram.mmd
-
-# Force server mode for stdin
-echo "graph LR; A-->B" | mermaid-preview --serve
 ```
 
 ## Flags
@@ -47,12 +41,9 @@ echo "graph LR; A-->B" | mermaid-preview --serve
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-p, --port PORT` | auto | Server port |
-| `-b, --no-browser` | false | Don't auto-open browser |
 | `-t, --theme THEME` | system | dark, light, or system |
 | `-w, --no-watch` | false | Disable file watching |
 | `--poll INTERVAL` | - | Stat-based polling (e.g. 500ms) |
-| `--once` | default for stdin | Render to self-contained HTML and exit |
-| `--serve` | default for files | Force server mode (live reload) |
 | `-v, --version` | - | Print version |
 | `-h, --help` | - | Print help |
 
@@ -67,25 +58,24 @@ echo "graph LR; A-->B" | mermaid-preview --serve
 All output is structured: `mermaid-preview: <message>`
 
 ```
-mermaid-preview: wrote /tmp/mermaid-preview-12345.html           # --once mode
 mermaid-preview: listening on http://127.0.0.1:52341 (flow.mmd)  # server mode
 mermaid-preview: shutting down
-mermaid-preview: no clients connected, shutting down             # auto-shutdown
 mermaid-preview: error: <message>                                # exit code 1 or 2
 ```
 
 ## Architecture
 
-Go binary with embedded mermaid.js (~2.5MB). Two modes:
-- **stdin/--once**: writes a self-contained HTML file to /tmp, opens browser, exits
-- **file/--serve**: starts HTTP server on 127.0.0.1 with WebSocket live reload
+macOS-only Go binary with embedded mermaid.js and a native frameless webview
+(`github.com/webview/webview_go`). Dual-mode binary: the CLI reads input, writes
+a temp config, spawns itself with `--internal-gui`, and exits. The GUI process
+runs an HTTP server + webview event loop.
 
 ## Build & Test
 
 ```bash
-go build -ldflags="-s -w" -o mermaid-preview .     # build
-go test ./...                                        # unit tests
-cd e2e && npm ci && npx playwright test              # E2E tests
+go build -ldflags="-s -w" -o bin/mermaid-preview .   # build
+go test ./...                                         # unit tests
+cd e2e && npm ci && npx playwright test               # E2E tests
 ```
 
 ## Agent Skill
@@ -105,20 +95,22 @@ to visualize, preview, or display a Mermaid diagram.
 ## Project Structure
 
 ```
-main.go                          # entrypoint → cmd.Execute()
-cmd/root.go                      # flag parsing, config, orchestration
-cmd/once.go                      # --once mode: self-contained HTML generation
-internal/server/server.go        # HTTP server, routes, lifecycle
-internal/server/websocket.go     # WebSocket broadcast (mutex+slice)
-internal/watcher/watcher.go      # fsnotify + poll fallback
-internal/browser/open.go         # cross-platform browser open (Chrome --app mode)
-internal/parser/markdown.go      # extract mermaid blocks from .md
-internal/version/version.go      # build-time version injection
-web/embed.go                     # //go:embed directives
-web/templates/index.html         # single-page template
-web/static/app.js                # frontend logic (vanilla JS)
-web/static/style.css             # dark/light theme CSS
-web/static/mermaid.min.js        # vendored mermaid IIFE build
-testdata/                        # test fixtures (.mmd, .md)
-e2e/                             # Playwright E2E tests
+main.go                              # entrypoint → cmd.Execute() or gui.Run()
+cmd/root.go                          # flag parsing, config, spawn GUI process
+internal/gui/gui.go                  # GUI entry point: server + webview lifecycle
+internal/gui/window.go               # webview creation, JS bindings
+internal/gui/config.go               # CLI→GUI IPC via temp JSON file
+internal/gui/frameless_darwin.go     # macOS frameless window (Cocoa/CGO)
+internal/server/server.go            # HTTP server, routes, lifecycle
+internal/server/websocket.go         # WebSocket broadcast (mutex+slice)
+internal/watcher/watcher.go          # fsnotify + poll fallback
+internal/parser/markdown.go          # extract mermaid blocks from .md
+internal/version/version.go          # build-time version injection
+web/embed.go                         # //go:embed directives
+web/templates/index.html             # single-page template
+web/static/app.js                    # frontend logic (vanilla JS)
+web/static/style.css                 # dark/light theme CSS
+web/static/mermaid.min.js            # vendored mermaid IIFE build
+testdata/                            # test fixtures (.mmd, .md)
+e2e/                                 # Playwright E2E tests
 ```

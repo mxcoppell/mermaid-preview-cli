@@ -24,6 +24,7 @@
     const diagram = document.getElementById('diagram');
     const diagramContainer = document.getElementById('diagram-container');
     const diagramWrapper = document.getElementById('diagram-wrapper');
+    const toolbar = document.getElementById('toolbar');
     const errorOverlay = document.getElementById('error-overlay');
     const errorMessage = document.getElementById('error-message');
     const disconnectedBanner = document.getElementById('disconnected-banner');
@@ -31,9 +32,6 @@
     const searchInput = document.getElementById('search-input');
     const searchCount = document.getElementById('search-count');
     const zoomLevel = document.getElementById('zoom-level');
-    const statusType = document.getElementById('status-type');
-    const statusNodes = document.getElementById('status-nodes');
-    const statusUpdated = document.getElementById('status-updated');
     const exportMenu = document.getElementById('export-menu');
 
     // ─── Theme ────────────────────────────────────────────────────
@@ -93,7 +91,6 @@
             const { svg } = await mermaid.render(id, source);
             return { svg: svg, error: null };
         } catch (err) {
-            // Clean up failed render element
             const el = document.getElementById('d' + id);
             if (el) el.remove();
             return { svg: null, error: err.message || String(err) };
@@ -118,8 +115,6 @@
 
         let hasError = false;
         let firstError = null;
-        let nodeCount = 0;
-        let diagramType = '';
 
         for (let i = 0; i < sources.length; i++) {
             const source = sources[i].trim();
@@ -144,15 +139,6 @@
             if (result.svg) {
                 block.innerHTML = result.svg;
                 lastValidSVG = diagram.innerHTML;
-
-                const svgEl = block.querySelector('svg');
-                if (svgEl) {
-                    nodeCount += svgEl.querySelectorAll('.node, .actor, .cluster').length;
-                }
-
-                if (i === 0) {
-                    diagramType = detectDiagramType(source);
-                }
             } else {
                 hasError = true;
                 if (!firstError) firstError = result.error;
@@ -166,8 +152,6 @@
         } else {
             hideError();
         }
-
-        updateStatus(diagramType, nodeCount);
     }
 
     async function renderCurrent() {
@@ -177,21 +161,6 @@
                 requestAnimationFrame(fitToViewport);
             }
         }
-    }
-
-    function detectDiagramType(source) {
-        const first = source.trim().split('\n')[0].toLowerCase();
-        if (first.startsWith('graph') || first.startsWith('flowchart')) return 'Flowchart';
-        if (first.startsWith('sequencediagram') || first.startsWith('sequence')) return 'Sequence';
-        if (first.startsWith('classdiagram') || first.startsWith('class')) return 'Class';
-        if (first.startsWith('statediagram') || first.startsWith('state')) return 'State';
-        if (first.startsWith('erdiagram') || first.startsWith('er')) return 'ER';
-        if (first.startsWith('gantt')) return 'Gantt';
-        if (first.startsWith('pie')) return 'Pie';
-        if (first.startsWith('gitgraph') || first.startsWith('git')) return 'Git Graph';
-        if (first.startsWith('mindmap')) return 'Mindmap';
-        if (first.startsWith('timeline')) return 'Timeline';
-        return 'Diagram';
     }
 
     function extractMermaidBlocks(content) {
@@ -218,13 +187,6 @@
         diagramContainer.classList.remove('diagram-dimmed');
     }
 
-    // ─── Status Bar ───────────────────────────────────────────────
-    function updateStatus(type, nodeCount) {
-        statusType.textContent = type || '';
-        statusNodes.textContent = nodeCount > 0 ? nodeCount + ' nodes' : '';
-        statusUpdated.textContent = 'Updated ' + new Date().toLocaleTimeString();
-    }
-
     // ─── Zoom/Pan ─────────────────────────────────────────────────
     function updateTransform() {
         diagramWrapper.style.transform =
@@ -237,7 +199,6 @@
     }
 
     function fitToViewport() {
-        // Remove transform to measure natural CSS layout position
         var prevTransform = diagramWrapper.style.transform;
         diagramWrapper.style.transform = 'none';
 
@@ -248,17 +209,14 @@
             return;
         }
 
-        var PADDING = 40;
+        var PADDING = 48;
         var scaleX = (containerRect.width - PADDING) / contentRect.width;
         var scaleY = (containerRect.height - PADDING) / contentRect.height;
-        var fitZoom = Math.min(scaleX, scaleY, 1);
+        var fitZoom = Math.min(scaleX, scaleY);
 
-        // Content's natural center relative to container
         var naturalCX = (contentRect.left - containerRect.left) + contentRect.width / 2;
         var naturalCY = (contentRect.top - containerRect.top) + contentRect.height / 2;
 
-        // After scale(fitZoom) from origin (0,0), center moves to naturalC * fitZoom
-        // Translate to bring it to container center
         zoom = fitZoom;
         panX = containerRect.width / 2 - naturalCX * fitZoom;
         panY = containerRect.height / 2 - naturalCY * fitZoom;
@@ -270,27 +228,13 @@
         var rect = diagramContainer.getBoundingClientRect();
         var cx = rect.width / 2;
         var cy = rect.height / 2;
-
         var oldZoom = zoom;
         zoom = Math.min(Math.max(zoom * factor, 0.1), 10);
         var scale = zoom / oldZoom;
-
         panX = cx - scale * (cx - panX);
         panY = cy - scale * (cy - panY);
         isFitted = false;
         updateTransform();
-    }
-
-    function zoomIn() {
-        zoomCentered(1.2);
-    }
-
-    function zoomOut() {
-        zoomCentered(1 / 1.2);
-    }
-
-    function resetZoom() {
-        fitToViewport();
     }
 
     // Mouse wheel zoom (centered on cursor)
@@ -299,46 +243,99 @@
         const rect = diagramContainer.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-
         const oldZoom = zoom;
-        if (e.deltaY < 0) {
-            zoom = Math.min(zoom * 1.1, 10);
-        } else {
-            zoom = Math.max(zoom / 1.1, 0.1);
-        }
-
+        zoom = e.deltaY < 0 ? Math.min(zoom * 1.1, 10) : Math.max(zoom / 1.1, 0.1);
         const scale = zoom / oldZoom;
         panX = mouseX - scale * (mouseX - panX);
         panY = mouseY - scale * (mouseY - panY);
-
         isFitted = false;
         updateTransform();
     }, { passive: false });
 
-    // Drag to pan
+    // ─── Diagram Pan & Window Drag ────────────────────────────────
+    // Click on diagram SVG: pan the diagram
+    // Click on empty background: move the window (native webview only)
+    let winDragging = false;
+    let winStartScreenX = 0;
+    let winStartScreenY = 0;
+
     diagramContainer.addEventListener('mousedown', function(e) {
-        if (e.target.closest('#search-bar') || e.target.closest('button')) return;
-        isDragging = true;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-        dragStartPanX = panX;
-        dragStartPanY = panY;
-        diagramContainer.classList.add('dragging');
+        if (e.target.closest('.floating-toolbar, .search-float, button, .dropdown-menu')) return;
+
+        // If clicking on the diagram content, pan
+        if (e.target.closest('#diagram')) {
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            dragStartPanX = panX;
+            dragStartPanY = panY;
+            diagramContainer.classList.add('dragging');
+            e.preventDefault();
+            return;
+        }
+
+        // Otherwise, move the window (native webview only)
+        if (typeof window.moveWindowBy === 'function') {
+            winDragging = true;
+            winStartScreenX = e.screenX;
+            winStartScreenY = e.screenY;
+            diagramContainer.classList.add('dragging');
+            e.preventDefault();
+        }
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (isDragging) {
+            panX = dragStartPanX + (e.clientX - dragStartX);
+            panY = dragStartPanY + (e.clientY - dragStartY);
+            isFitted = false;
+            updateTransform();
+            return;
+        }
+        if (winDragging) {
+            var dx = e.screenX - winStartScreenX;
+            var dy = e.screenY - winStartScreenY;
+            winStartScreenX = e.screenX;
+            winStartScreenY = e.screenY;
+            window.moveWindowBy(dx, dy);
+        }
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (isDragging) {
+            isDragging = false;
+            diagramContainer.classList.remove('dragging');
+        }
+        if (winDragging) {
+            winDragging = false;
+            diagramContainer.classList.remove('dragging');
+        }
+    });
+
+    // ─── Toolbar Drag (reposition within window) ──────────────────
+    let tbDragging = false;
+    let tbOffsetX = 0;
+    let tbOffsetY = 0;
+
+    toolbar.addEventListener('mousedown', function(e) {
+        if (e.target.closest('button, .dropdown-menu, input, .zoom-label')) return;
+        tbDragging = true;
+        const rect = toolbar.getBoundingClientRect();
+        tbOffsetX = e.clientX - rect.left;
+        tbOffsetY = e.clientY - rect.top;
         e.preventDefault();
     });
 
     document.addEventListener('mousemove', function(e) {
-        if (!isDragging) return;
-        panX = dragStartPanX + (e.clientX - dragStartX);
-        panY = dragStartPanY + (e.clientY - dragStartY);
-        isFitted = false;
-        updateTransform();
+        if (!tbDragging) return;
+        // Switch to left-based positioning once dragging starts
+        toolbar.style.right = 'auto';
+        toolbar.style.left = (e.clientX - tbOffsetX) + 'px';
+        toolbar.style.top = (e.clientY - tbOffsetY) + 'px';
     });
 
     document.addEventListener('mouseup', function() {
-        if (!isDragging) return;
-        isDragging = false;
-        diagramContainer.classList.remove('dragging');
+        tbDragging = false;
     });
 
     // ─── Search ───────────────────────────────────────────────────
@@ -414,7 +411,6 @@
         const centerY = containerRect.top + containerRect.height / 2;
         const elCenterX = rect.left + rect.width / 2;
         const elCenterY = rect.top + rect.height / 2;
-
         panX += (centerX - elCenterX);
         panY += (centerY - elCenterY);
         updateTransform();
@@ -455,11 +451,7 @@
     searchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            if (e.shiftKey) {
-                prevMatch();
-            } else {
-                nextMatch();
-            }
+            if (e.shiftKey) { prevMatch(); } else { nextMatch(); }
         }
     });
 
@@ -467,7 +459,31 @@
     document.getElementById('search-prev').addEventListener('click', prevMatch);
     document.getElementById('search-close').addEventListener('click', closeSearch);
 
-    // ─── Export ────────────────────────────────────────────────────
+    // ─── Close button ─────────────────────────────────────────────
+    document.getElementById('close-btn').addEventListener('click', function() {
+        fetch('/api/shutdown', { method: 'POST' }).catch(function() {});
+    });
+
+    // ─── Auto-shape window (live reload) ────────────────────────────
+    // Used on WebSocket updates — window is already visible, so just reshape.
+    function autoShapeWindow() {
+        fitToViewport();
+        if (typeof window.resizeWindow !== 'function') return;
+        var dims = computeShapeDimensions();
+        if (dims) {
+            window.resizeWindow(dims.w, dims.h);
+            requestAnimationFrame(fitToViewport);
+        }
+    }
+
+    // ─── Toolbar Buttons ──────────────────────────────────────────
+    document.getElementById('zoom-in').addEventListener('click', function() { zoomCentered(1.2); });
+    document.getElementById('zoom-out').addEventListener('click', function() { zoomCentered(1/1.2); });
+    document.getElementById('zoom-reset').addEventListener('click', fitToViewport);
+    document.getElementById('theme-toggle').addEventListener('click', cycleTheme);
+    document.getElementById('search-btn').addEventListener('click', openSearch);
+
+    // ─── Export ───────────────────────────────────────────────────
     document.getElementById('export-btn').addEventListener('click', function(e) {
         e.stopPropagation();
         exportMenu.classList.toggle('hidden');
@@ -482,35 +498,29 @@
     document.getElementById('export-svg').addEventListener('click', function() {
         const svg = diagram.querySelector('svg');
         if (!svg) return;
-        const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svg);
-        downloadFile(svgString, config.filename.replace(/\.[^.]+$/, '') + '.svg', 'image/svg+xml');
+        const s = new XMLSerializer().serializeToString(svg);
+        downloadFile(s, (config.filename || 'diagram').replace(/\.[^.]+$/, '') + '.svg', 'image/svg+xml');
         exportMenu.classList.add('hidden');
     });
 
     document.getElementById('export-png').addEventListener('click', function() {
         const svg = diagram.querySelector('svg');
         if (!svg) return;
-
-        const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svg);
-        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(svgBlob);
-
+        const s = new XMLSerializer().serializeToString(svg);
+        const url = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml;charset=utf-8' }));
         const img = new Image();
         img.onload = function() {
-            const scale = window.devicePixelRatio || 1;
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width * scale;
-            canvas.height = img.height * scale;
-            const ctx = canvas.getContext('2d');
-            ctx.scale(scale, scale);
+            const sc = window.devicePixelRatio || 1;
+            const c = document.createElement('canvas');
+            c.width = img.width * sc;
+            c.height = img.height * sc;
+            const ctx = c.getContext('2d');
+            ctx.scale(sc, sc);
             ctx.drawImage(img, 0, 0);
-
-            canvas.toBlob(function(blob) {
+            c.toBlob(function(blob) {
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
-                a.download = config.filename.replace(/\.[^.]+$/, '') + '.png';
+                a.download = (config.filename || 'diagram').replace(/\.[^.]+$/, '') + '.png';
                 a.click();
                 URL.revokeObjectURL(a.href);
             });
@@ -534,12 +544,6 @@
         URL.revokeObjectURL(a.href);
     }
 
-    // ─── Zoom buttons ─────────────────────────────────────────────
-    document.getElementById('zoom-in').addEventListener('click', zoomIn);
-    document.getElementById('zoom-out').addEventListener('click', zoomOut);
-    document.getElementById('zoom-reset').addEventListener('click', resetZoom);
-    document.getElementById('theme-toggle').addEventListener('click', cycleTheme);
-
     // ─── Keyboard Shortcuts ───────────────────────────────────────
     document.addEventListener('keydown', function(e) {
         if (e.target === searchInput && e.key !== 'Escape') return;
@@ -559,25 +563,17 @@
             return;
         }
 
-        if (e.key === 't' || e.key === 'T') {
-            cycleTheme();
+        // Spacebar: lightbox-style dismiss (not when focused on text input)
+        if (e.key === ' ' && !e.target.matches('input, textarea, [contenteditable]')) {
+            e.preventDefault();
+            fetch('/api/shutdown', { method: 'POST' }).catch(function() {});
             return;
         }
 
-        if (e.key === '+' || e.key === '=') {
-            zoomIn();
-            return;
-        }
-
-        if (e.key === '-') {
-            zoomOut();
-            return;
-        }
-
-        if (e.key === '0') {
-            resetZoom();
-            return;
-        }
+        if (e.key === 't' || e.key === 'T') { cycleTheme(); return; }
+        if (e.key === '+' || e.key === '=') { zoomCentered(1.2); return; }
+        if (e.key === '-') { zoomCentered(1/1.2); return; }
+        if (e.key === '0') { fitToViewport(); return; }
     });
 
     // ─── WebSocket ────────────────────────────────────────────────
@@ -591,7 +587,9 @@
         };
 
         ws.onmessage = function(event) {
-            renderContent(event.data);
+            renderContent(event.data).then(function() {
+                requestAnimationFrame(autoShapeWindow);
+            });
         };
 
         ws.onclose = function() {
@@ -609,14 +607,59 @@
     }
 
     // ─── Init ─────────────────────────────────────────────────────
+    // Compute the window shape dimensions without applying them.
+    function computeShapeDimensions() {
+        var svgs = diagram.querySelectorAll('svg');
+        if (!svgs.length) return null;
+
+        var contentW = 0, contentH = 0;
+        svgs.forEach(function(svg) {
+            var rect = svg.getBoundingClientRect();
+            contentW = Math.max(contentW, rect.width);
+            contentH += rect.height;
+        });
+        var blocks = diagram.querySelectorAll('.diagram-block');
+        if (blocks.length > 1) contentH += (blocks.length - 1) * 60;
+        if (contentW <= 0 || contentH <= 0) return null;
+
+        var aspect = contentW / contentH;
+        var MAX_ASPECT = 2.5;
+        aspect = Math.min(Math.max(aspect, 1 / MAX_ASPECT), MAX_ASPECT);
+
+        var AREA = 1200000;
+        var w = Math.sqrt(AREA * aspect);
+        var h = AREA / w;
+
+        var MIN_W = 700, MIN_H = 500;
+        var maxW = Math.min(1500, screen.availWidth * 0.75);
+        var maxH = Math.min(1100, screen.availHeight * 0.75);
+        w = Math.min(Math.max(w, MIN_W), maxW);
+        h = Math.min(Math.max(h, MIN_H), maxH);
+
+        return { w: Math.round(w), h: Math.round(h) };
+    }
+
     async function init() {
         try {
             const resp = await fetch('/api/diagram');
             const content = await resp.text();
             await renderContent(content);
-            requestAnimationFrame(fitToViewport);
+            requestAnimationFrame(function() {
+                fitToViewport();
+                // Compute shape and pass to showWindow so resize + reveal
+                // happen atomically — no flash.
+                if (typeof window.showWindow === 'function') {
+                    var dims = computeShapeDimensions();
+                    window.showWindow(dims ? dims.w : 0, dims ? dims.h : 0);
+                    // Re-fit after window reshape — the viewport changed.
+                    requestAnimationFrame(fitToViewport);
+                }
+            });
         } catch (err) {
             showError('Failed to load diagram: ' + err.message);
+            if (typeof window.showWindow === 'function') {
+                window.showWindow(0, 0);
+            }
         }
 
         if (!config.noWatch) {

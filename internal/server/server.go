@@ -26,15 +26,16 @@ type Config struct {
 
 // Server is the HTTP server for mermaid-preview.
 type Server struct {
-	cfg      Config
-	mu       sync.RWMutex
-	content  string
-	blocks   []string // parsed mermaid blocks (for markdown files)
-	srv      *http.Server
-	ws       *WSHub
-	cancel   context.CancelFunc
-	done     chan struct{}
-	listener net.Listener
+	cfg        Config
+	mu         sync.RWMutex
+	content    string
+	blocks     []string // parsed mermaid blocks (for markdown files)
+	srv        *http.Server
+	ws         *WSHub
+	cancel     context.CancelFunc
+	done       chan struct{}
+	listener   net.Listener
+	OnShutdown func() // called before server shutdown (e.g. to terminate webview)
 }
 
 // New creates a new Server.
@@ -205,6 +206,9 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 	// Shutdown asynchronously so the response is sent
 	go func() {
 		time.Sleep(100 * time.Millisecond)
+		if s.OnShutdown != nil {
+			s.OnShutdown()
+		}
 		s.Shutdown()
 	}()
 }

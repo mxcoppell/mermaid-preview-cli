@@ -8,40 +8,39 @@
     <script src="/static/mermaid.min.js"></script>
 </head>
 <body>
-    <!-- Toolbar -->
-    <header id="toolbar">
-        <div class="toolbar-left">
-            <span id="filename" class="filename">{{.Filename}}</span>
-        </div>
-        <div class="toolbar-center">
-            <div id="search-bar" class="search-bar hidden">
-                <input type="text" id="search-input" placeholder="Search nodes..." autocomplete="off">
-                <span id="search-count" class="search-count"></span>
-                <button id="search-prev" class="btn-icon" title="Previous (Shift+Enter)">&#9650;</button>
-                <button id="search-next" class="btn-icon" title="Next (Enter)">&#9660;</button>
-                <button id="search-close" class="btn-icon" title="Close (Esc)">&times;</button>
+    <!-- Floating toolbar -->
+    <div id="toolbar" class="floating-toolbar">
+        <button id="zoom-in" class="tb-btn" title="Zoom in (+)">+</button>
+        <button id="zoom-out" class="tb-btn" title="Zoom out (&#8722;)">&#8722;</button>
+        <span id="zoom-level" class="zoom-label">Fit</span>
+        <button id="zoom-reset" class="tb-btn" title="Reset zoom (0)">&#8857;</button>
+        <div class="tb-sep"></div>
+        <button id="search-btn" class="tb-btn" title="Search (Cmd/Ctrl+F)">&#8981;</button>
+        <button id="theme-toggle" class="tb-btn" title="Toggle theme (T)">&#9680;</button>
+        <div class="dropdown">
+            <button id="export-btn" class="tb-btn" title="Export">&#10515;</button>
+            <div id="export-menu" class="dropdown-menu hidden">
+                <button id="export-svg">Export SVG</button>
+                <button id="export-png">Export PNG</button>
+                <button id="export-print">Print</button>
             </div>
         </div>
-        <div class="toolbar-right">
-            <span id="zoom-level" class="zoom-level">Fit</span>
-            <button id="zoom-in" class="btn-icon" title="Zoom in (+)">+</button>
-            <button id="zoom-out" class="btn-icon" title="Zoom out (-)">−</button>
-            <button id="zoom-reset" class="btn-icon" title="Reset zoom (0)">⊙</button>
-            <button id="theme-toggle" class="btn-icon" title="Toggle theme (T)">◐</button>
-            <div class="dropdown">
-                <button id="export-btn" class="btn-icon" title="Export">⤓</button>
-                <div id="export-menu" class="dropdown-menu hidden">
-                    <button id="export-svg">Export SVG</button>
-                    <button id="export-png">Export PNG</button>
-                    <button id="export-print">Print</button>
-                </div>
-            </div>
-        </div>
-    </header>
+        <div class="tb-sep"></div>
+        <button id="close-btn" class="tb-btn tb-close" title="Close (Esc)">&#215;</button>
+    </div>
+
+    <!-- Floating search -->
+    <div id="search-bar" class="search-float hidden">
+        <input type="text" id="search-input" placeholder="Search nodes..." autocomplete="off">
+        <span id="search-count" class="search-count"></span>
+        <button id="search-prev" class="sf-btn" title="Previous (Shift+Enter)">&#9650;</button>
+        <button id="search-next" class="sf-btn" title="Next (Enter)">&#9660;</button>
+        <button id="search-close" class="sf-btn" title="Close (Esc)">&#215;</button>
+    </div>
 
     <!-- Disconnected banner -->
-    <div id="disconnected-banner" class="disconnected-banner hidden">
-        Disconnected — reconnecting...
+    <div id="disconnected-banner" class="disconnected-float hidden">
+        Disconnected &mdash; reconnecting&hellip;
     </div>
 
     <!-- Error overlay -->
@@ -52,19 +51,12 @@
         </div>
     </div>
 
-    <!-- Diagram container -->
+    <!-- Diagram container (full window) -->
     <main id="diagram-container" class="diagram-container">
         <div id="diagram-wrapper" class="diagram-wrapper">
             <div id="diagram"></div>
         </div>
     </main>
-
-    <!-- Status bar -->
-    <footer id="status-bar" class="status-bar">
-        <span id="status-type"></span>
-        <span id="status-nodes"></span>
-        <span id="status-updated"></span>
-    </footer>
 
     <!-- Config injected from server -->
     <script>

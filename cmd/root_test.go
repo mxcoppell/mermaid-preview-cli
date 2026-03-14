@@ -40,9 +40,6 @@ func TestParseFlags_Defaults(t *testing.T) {
 	if cfg.Port != 0 {
 		t.Errorf("Port = %d, want 0", cfg.Port)
 	}
-	if cfg.NoBrowser {
-		t.Error("expected NoBrowser = false")
-	}
 	if cfg.Theme != "system" {
 		t.Errorf("Theme = %q, want %q", cfg.Theme, "system")
 	}
@@ -54,7 +51,6 @@ func TestParseFlags_Defaults(t *testing.T) {
 func TestParseFlags_AllFlags(t *testing.T) {
 	cfg, err := parseFlags([]string{
 		"--port", "8080",
-		"--no-browser",
 		"--theme", "dark",
 		"--no-watch",
 		"--poll", "500ms",
@@ -65,9 +61,6 @@ func TestParseFlags_AllFlags(t *testing.T) {
 	}
 	if cfg.Port != 8080 {
 		t.Errorf("Port = %d, want 8080", cfg.Port)
-	}
-	if !cfg.NoBrowser {
-		t.Error("expected NoBrowser = true")
 	}
 	if cfg.Theme != "dark" {
 		t.Errorf("Theme = %q, want %q", cfg.Theme, "dark")
@@ -81,18 +74,18 @@ func TestParseFlags_AllFlags(t *testing.T) {
 }
 
 func TestParseFlags_ShortFlags(t *testing.T) {
-	cfg, err := parseFlags([]string{"-p", "9090", "-b", "-t", "light", "-w", "test.mmd"}, devNull(t))
+	cfg, err := parseFlags([]string{"-p", "9090", "-t", "light", "-w", "test.mmd"}, devNull(t))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if cfg.Port != 9090 {
 		t.Errorf("Port = %d, want 9090", cfg.Port)
 	}
-	if !cfg.NoBrowser {
-		t.Error("expected NoBrowser = true")
-	}
 	if cfg.Theme != "light" {
 		t.Errorf("Theme = %q, want %q", cfg.Theme, "light")
+	}
+	if !cfg.NoWatch {
+		t.Error("expected NoWatch = true")
 	}
 }
 
@@ -111,37 +104,11 @@ func TestParseFlags_NoArgs_Stdin(t *testing.T) {
 	if !cfg.IsStdin {
 		t.Error("expected IsStdin = true")
 	}
-	if !cfg.Once {
-		t.Error("expected Once = true (stdin default)")
+	if !cfg.NoWatch {
+		t.Error("expected NoWatch = true for stdin")
 	}
-	if len(cfg.Files) != 1 || cfg.Files[0] != "<stdin>" {
-		t.Errorf("Files = %v, want [<stdin>]", cfg.Files)
-	}
-}
-
-func TestParseFlags_Stdin_ServeOverride(t *testing.T) {
-	cfg, err := parseFlags([]string{"--serve"}, devNull(t))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !cfg.IsStdin {
-		t.Error("expected IsStdin = true")
-	}
-	if cfg.Once {
-		t.Error("expected Once = false when --serve is set")
-	}
-}
-
-func TestParseFlags_FileWithOnce(t *testing.T) {
-	cfg, err := parseFlags([]string{"--once", "test.mmd"}, devNull(t))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !cfg.Once {
-		t.Error("expected Once = true")
-	}
-	if cfg.IsStdin {
-		t.Error("expected IsStdin = false")
+	if len(cfg.Files) != 1 || cfg.Files[0] != "" {
+		t.Errorf("Files = %v, want [\"\"]", cfg.Files)
 	}
 }
 

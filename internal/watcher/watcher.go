@@ -94,8 +94,7 @@ func (fw *FileWatcher) Content() <-chan string {
 	return fw.content
 }
 
-// PollWatcher uses stat-based polling for environments where fsnotify doesn't work
-// (WSL, Docker, NFS).
+// PollWatcher uses stat-based polling for environments where fsnotify doesn't work.
 type PollWatcher struct {
 	path     string
 	interval time.Duration

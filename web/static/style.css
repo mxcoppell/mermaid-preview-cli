@@ -3,7 +3,6 @@
 [data-theme="light"] {
     --bg-primary: #ffffff;
     --bg-secondary: #f5f5f5;
-    --bg-toolbar: #fafafa;
     --text-primary: #1a1a1a;
     --text-secondary: #666666;
     --border-color: #e0e0e0;
@@ -15,13 +14,16 @@
     --search-active: rgba(255, 152, 0, 0.7);
     --disconnected-bg: #fef3c7;
     --disconnected-text: #92400e;
-    --btn-hover: #e8e8e8;
+    --toolbar-bg: rgba(255, 255, 255, 0.82);
+    --toolbar-border: rgba(0, 0, 0, 0.1);
+    --tb-text: #333333;
+    --tb-text-dim: #888888;
+    --tb-hover: rgba(0, 0, 0, 0.07);
 }
 
 [data-theme="dark"] {
     --bg-primary: #1e1e1e;
     --bg-secondary: #2a2a2a;
-    --bg-toolbar: #171717;
     --text-primary: #e0e0e0;
     --text-secondary: #a0a0a0;
     --border-color: #3a3a3a;
@@ -33,14 +35,17 @@
     --search-active: rgba(255, 152, 0, 0.6);
     --disconnected-bg: #422006;
     --disconnected-text: #fbbf24;
-    --btn-hover: #3a3a3a;
+    --toolbar-bg: rgba(38, 38, 38, 0.82);
+    --toolbar-border: rgba(255, 255, 255, 0.08);
+    --tb-text: #e0e0e0;
+    --tb-text-dim: #999999;
+    --tb-hover: rgba(255, 255, 255, 0.09);
 }
 
 @media (prefers-color-scheme: dark) {
     [data-theme="system"] {
         --bg-primary: #1e1e1e;
         --bg-secondary: #2a2a2a;
-        --bg-toolbar: #171717;
         --text-primary: #e0e0e0;
         --text-secondary: #a0a0a0;
         --border-color: #3a3a3a;
@@ -52,7 +57,11 @@
         --search-active: rgba(255, 152, 0, 0.6);
         --disconnected-bg: #422006;
         --disconnected-text: #fbbf24;
-        --btn-hover: #3a3a3a;
+        --toolbar-bg: rgba(38, 38, 38, 0.82);
+        --toolbar-border: rgba(255, 255, 255, 0.08);
+        --tb-text: #e0e0e0;
+        --tb-text-dim: #999999;
+        --tb-hover: rgba(255, 255, 255, 0.09);
     }
 }
 
@@ -60,7 +69,6 @@
     [data-theme="system"] {
         --bg-primary: #ffffff;
         --bg-secondary: #f5f5f5;
-        --bg-toolbar: #fafafa;
         --text-primary: #1a1a1a;
         --text-secondary: #666666;
         --border-color: #e0e0e0;
@@ -72,7 +80,11 @@
         --search-active: rgba(255, 152, 0, 0.7);
         --disconnected-bg: #fef3c7;
         --disconnected-text: #92400e;
-        --btn-hover: #e8e8e8;
+        --toolbar-bg: rgba(255, 255, 255, 0.82);
+        --toolbar-border: rgba(0, 0, 0, 0.1);
+        --tb-text: #333333;
+        --tb-text-dim: #888888;
+        --tb-hover: rgba(0, 0, 0, 0.07);
     }
 }
 
@@ -83,87 +95,110 @@
     padding: 0;
 }
 
+html {
+    box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.15);
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    display: flex;
-    flex-direction: column;
     height: 100vh;
     overflow: hidden;
 }
 
-/* Toolbar */
-#toolbar {
+/* ─── Floating Toolbar ─────────────────────────────────── */
+.floating-toolbar {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 5px;
+    background: var(--toolbar-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 12px;
+    border: 1px solid var(--toolbar-border);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+    z-index: 1000;
+    user-select: none;
+    cursor: grab;
+}
+
+.floating-toolbar:active {
+    cursor: grabbing;
+}
+
+.tb-btn {
     display: flex;
     align-items: center;
-    padding: 6px 12px;
-    background: var(--bg-toolbar);
-    border-bottom: 1px solid var(--border-color);
-    gap: 12px;
-    min-height: 40px;
-    z-index: 100;
-}
-
-.toolbar-left {
-    flex: 0 0 auto;
-}
-
-.toolbar-center {
-    flex: 1;
-    display: flex;
     justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--tb-text);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    transition: background 0.1s;
 }
 
-.toolbar-right {
-    flex: 0 0 auto;
+.tb-btn:hover {
+    background: var(--tb-hover);
+}
+
+.tb-btn:active {
+    background: var(--tb-hover);
+    transform: scale(0.94);
+}
+
+.tb-close:hover {
+    background: rgba(220, 50, 50, 0.15);
+    color: #dc3232;
+}
+
+.tb-sep {
+    width: 18px;
+    height: 1px;
+    background: var(--toolbar-border);
+    margin: 3px 0;
+    flex-shrink: 0;
+}
+
+.zoom-label {
+    font-size: 11px;
+    color: var(--tb-text-dim);
+    min-width: 26px;
+    text-align: center;
+    padding: 0 1px;
+}
+
+/* ─── Floating Search ──────────────────────────────────── */
+.search-float {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 4px;
+    padding: 5px 10px;
+    background: var(--toolbar-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 10px;
+    border: 1px solid var(--toolbar-border);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+    min-width: 280px;
 }
 
-.filename {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.btn-icon {
-    background: none;
-    border: 1px solid transparent;
-    color: var(--text-primary);
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 14px;
-    line-height: 1;
-}
-
-.btn-icon:hover {
-    background: var(--btn-hover);
-}
-
-.zoom-level {
-    font-size: 12px;
-    color: var(--text-secondary);
-    min-width: 40px;
-    text-align: center;
-}
-
-/* Search bar */
-.search-bar {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 4px 8px;
-    max-width: 400px;
-    width: 100%;
-}
-
-.search-bar.hidden {
+.search-float.hidden {
     display: none;
 }
 
@@ -174,31 +209,52 @@ body {
     color: var(--text-primary);
     font-size: 13px;
     outline: none;
-    min-width: 100px;
+    min-width: 120px;
 }
 
 .search-count {
     font-size: 11px;
-    color: var(--text-secondary);
+    color: var(--tb-text-dim);
     white-space: nowrap;
 }
 
-/* Dropdown */
+.sf-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--tb-text);
+    cursor: pointer;
+    font-size: 11px;
+    transition: background 0.1s;
+}
+
+.sf-btn:hover {
+    background: var(--tb-hover);
+}
+
+/* ─── Dropdown ─────────────────────────────────────────── */
 .dropdown {
     position: relative;
 }
 
 .dropdown-menu {
     position: absolute;
-    right: 0;
-    top: 100%;
-    background: var(--bg-toolbar);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
+    right: calc(100% + 6px);
+    top: 0;
+    background: var(--toolbar-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--toolbar-border);
+    border-radius: 8px;
     padding: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 200;
-    min-width: 140px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 1100;
+    min-width: 130px;
 }
 
 .dropdown-menu.hidden {
@@ -215,36 +271,41 @@ body {
     color: var(--text-primary);
     cursor: pointer;
     font-size: 13px;
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
 .dropdown-menu button:hover {
-    background: var(--btn-hover);
+    background: var(--tb-hover);
 }
 
-/* Disconnected banner */
-.disconnected-banner {
+/* ─── Disconnected ─────────────────────────────────────── */
+.disconnected-float {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
     background: var(--disconnected-bg);
     color: var(--disconnected-text);
-    text-align: center;
-    padding: 6px;
+    padding: 6px 16px;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 500;
-    z-index: 90;
+    z-index: 900;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
-.disconnected-banner.hidden {
+.disconnected-float.hidden {
     display: none;
 }
 
-/* Error overlay */
+/* ─── Error Overlay ────────────────────────────────────── */
 .error-overlay {
-    position: absolute;
-    bottom: 40px;
+    position: fixed;
+    bottom: 20px;
     left: 0;
     right: 0;
-    z-index: 80;
-    padding: 12px 20px;
+    z-index: 800;
+    padding: 0 20px;
 }
 
 .error-overlay.hidden {
@@ -255,11 +316,12 @@ body {
     background: var(--error-bg);
     border: 1px solid var(--error-border);
     color: var(--error-text);
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 12px 16px;
-    max-width: 800px;
+    max-width: 700px;
     margin: 0 auto;
     font-size: 13px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .error-content strong {
@@ -274,11 +336,14 @@ body {
     font-size: 12px;
 }
 
-/* Diagram container */
+/* ─── Diagram Container (full window) ──────────────────── */
 .diagram-container {
-    flex: 1;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     overflow: hidden;
-    position: relative;
     cursor: grab;
 }
 
@@ -288,12 +353,11 @@ body {
 
 .diagram-wrapper {
     transform-origin: 0 0;
-    display: inline-block;
-    min-width: 100%;
-    min-height: 100%;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
+    min-width: 100%;
+    min-height: 100%;
     padding: 20px;
 }
 
@@ -346,25 +410,11 @@ body {
     box-shadow: 0 0 12px var(--search-active);
 }
 
-/* Status bar */
-.status-bar {
-    display: flex;
-    align-items: center;
-    padding: 4px 12px;
-    background: var(--bg-toolbar);
-    border-top: 1px solid var(--border-color);
-    font-size: 11px;
-    color: var(--text-secondary);
-    gap: 16px;
-    min-height: 24px;
-    z-index: 100;
-}
-
-/* Print styles */
+/* ─── Print ────────────────────────────────────────────── */
 @media print {
-    #toolbar,
-    #status-bar,
-    #disconnected-banner,
+    .floating-toolbar,
+    .search-float,
+    .disconnected-float,
     .error-overlay {
         display: none !important;
     }
@@ -375,6 +425,7 @@ body {
     }
 
     .diagram-container {
+        position: static;
         overflow: visible;
         height: auto;
     }

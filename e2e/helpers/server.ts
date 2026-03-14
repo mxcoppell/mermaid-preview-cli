@@ -9,14 +9,14 @@ export interface ServerInstance {
 }
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const BINARY_PATH = path.join(PROJECT_ROOT, 'mermaid-preview');
+const BINARY_PATH = path.join(PROJECT_ROOT, 'bin', 'mermaid-preview');
 
 /**
  * Build the Go binary if it doesn't already exist.
  */
 function ensureBinary(): void {
   if (!fs.existsSync(BINARY_PATH)) {
-    execFileSync('go', ['build', '-o', 'mermaid-preview', '.'], {
+    execFileSync('go', ['build', '-o', 'bin/mermaid-preview', '.'], {
       cwd: PROJECT_ROOT,
       stdio: 'pipe',
     });
@@ -33,7 +33,7 @@ export async function startServer(
 ): Promise<ServerInstance> {
   ensureBinary();
 
-  const args = ['--no-browser', '--port', '0', ...extraArgs, filePath];
+  const args = ['--port', '0', ...extraArgs, filePath];
   const proc = spawn(BINARY_PATH, args, {
     cwd: PROJECT_ROOT,
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -53,7 +53,7 @@ export async function startServerWithStdin(
 ): Promise<ServerInstance> {
   ensureBinary();
 
-  const args = ['--no-browser', '--port', '0', ...extraArgs];
+  const args = ['--port', '0', ...extraArgs];
   const proc = spawn(BINARY_PATH, args, {
     cwd: PROJECT_ROOT,
     stdio: ['pipe', 'pipe', 'pipe'],

@@ -1,22 +1,15 @@
 # mermaid-preview
 
-Lightweight CLI to preview Mermaid diagrams in the browser with live reload.
+Lightweight CLI to preview Mermaid diagrams in a native frameless window (macOS).
 
-A single Go binary (~10MB) that starts a local HTTP server, opens your browser, and renders Mermaid diagrams with live reload on file changes. No internet required, no editor plugin needed.
+A single Go binary with embedded mermaid.js that opens a frameless webview window to render diagrams. Supports live reload on file changes. No browser dependency, no internet, no Node.js.
 
 ## Install
 
-### Homebrew (macOS/Linux)
+### Homebrew (macOS)
 
 ```bash
 brew install mxie/tap/mermaid-preview
-```
-
-### Scoop (Windows)
-
-```bash
-scoop bucket add mxie https://github.com/mxie/scoop-bucket
-scoop install mermaid-preview
 ```
 
 ### Download binary
@@ -26,33 +19,40 @@ Grab the latest release from [GitHub Releases](https://github.com/mxie/mermaid-p
 ### Build from source
 
 ```bash
-go install github.com/mxie/mermaid-preview@latest
+go build -ldflags="-s -w" -o bin/mermaid-preview .
 ```
 
 ## Quick Start
 
 ```bash
-# Preview a .mmd file
-mermaid-preview diagram.mmd
-
-# Pipe from stdin
+# Pipe from stdin (CLI exits immediately, window stays open)
 echo "graph LR; A-->B-->C" | mermaid-preview
 
-# Extract and preview mermaid blocks from markdown
+# Preview a file (live reload on changes)
+mermaid-preview diagram.mmd
+
+# Multiple files — each gets its own window
+mermaid-preview flow.mmd sequence.mmd
+
+# Extracts ```mermaid blocks from markdown
 mermaid-preview README.md
 ```
+
+## Supported Files
+
+| Extension | Behavior |
+|-----------|----------|
+| `.mmd`, `.mermaid` | Mermaid diagram files |
+| `.md`, `.markdown` | Extracts ` ```mermaid ` fenced blocks |
 
 ## CLI Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-p, --port PORT` | auto | Server port |
-| `-b, --no-browser` | false | Don't auto-open browser |
 | `-t, --theme THEME` | system | `dark`, `light`, or `system` |
 | `-w, --no-watch` | false | Disable file watching |
-| `--poll INTERVAL` | — | Polling fallback for WSL/Docker/NFS (e.g. `500ms`) |
-| `--once` | default for stdin | Render to self-contained HTML and exit (no server) |
-| `--serve` | default for files | Force server mode (override `--once` for stdin) |
+| `--poll INTERVAL` | — | Stat-based polling fallback (e.g. `500ms`) |
 | `-v, --version` | — | Print version |
 | `-h, --help` | — | Print help |
 
@@ -60,24 +60,31 @@ mermaid-preview README.md
 
 | Key | Action |
 |-----|--------|
-| `Cmd/Ctrl+F` | Search nodes |
+| `Cmd+F` | Search nodes |
 | `T` | Toggle theme (system → light → dark) |
 | `+` / `-` | Zoom in / out |
-| `0` | Reset zoom |
-| `Esc` | Close search, or quit server |
+| `0` | Reset zoom (fit to viewport) |
+| `Esc` | Close search, or close window |
+| `Space` | Close window |
 
-## How It Works
+## Stdin
 
-`mermaid-preview` is a Go binary with mermaid.js embedded via `//go:embed`. It starts an HTTP server on `127.0.0.1`, serves a single-page app that renders diagrams client-side using mermaid.js, and pushes file changes to the browser via WebSocket. No external dependencies, no internet, no Node.js.
+Pipe any mermaid source to stdin. The CLI renders it and exits immediately — the window stays open independently. Max input: 10MB.
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Argument error (bad flags, missing file) |
+| `2` | Runtime error (port in use, read failure) |
 
 ## Agent Integration
 
 `mermaid-preview` includes a Claude Code skill that lets agents automatically discover and use it when you ask to visualize diagrams.
 
-**Install the skill:**
-
 ```bash
-# From the repo root
+# Install the skill (symlink stays up to date)
 ln -s "$(pwd)/skills/mermaid-preview.md" ~/.claude/skills/mermaid-preview.md
 ```
 
@@ -87,7 +94,7 @@ Once installed, asking Claude Code to "show this as a diagram" or "visualize thi
 
 ```bash
 # Build
-go build -ldflags="-s -w" -o mermaid-preview .
+go build -ldflags="-s -w" -o bin/mermaid-preview .
 
 # Run tests
 go test ./...

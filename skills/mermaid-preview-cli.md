@@ -5,11 +5,24 @@ description: Preview, visualize, render, display, or show Mermaid diagrams in a 
 
 # Mermaid Preview
 
-Display Mermaid diagrams in a native frameless window using the `mermaid-preview-cli` CLI. No browser, no internet, no Node.js.
+Display Mermaid diagrams in a native frameless window using the `mermaid-preview-cli` CLI. Single binary with embedded mermaid.js — no browser, no Node.js.
+
+## Important: Always Pipe, Never Create Files
+
+**Do NOT create `.mmd` files just to preview them.** Always pipe diagram source directly to stdin:
+
+```bash
+echo 'graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Do Thing]
+    B -->|No| D[Skip]' | mermaid-preview-cli
+```
+
+The CLI exits immediately (exit code 0), the window stays open. No temp files, no cleanup.
 
 ## Recommended: Run in a Subagent
 
-Diagram rendering is a visual side-effect — no output needs to return to the conversation. Running `mermaid-preview-cli` in a subagent keeps the main context clean and avoids wasting tokens on tool output from a fire-and-forget command.
+Diagram rendering is a visual side-effect — no output needs to return to the conversation. Running in a subagent keeps the main context clean.
 
 ```
 Agent tool call:
@@ -24,53 +37,16 @@ Agent tool call:
   subagent_type: general-purpose
 ```
 
-The subagent runs the command, the window opens, and the main conversation continues uninterrupted.
-
 ## Use Cases
 
-### 1. Inline Visualization (Agents)
+### Previewing Existing Files
 
-Pipe diagram source to stdin. The CLI opens a native window and exits immediately (exit code 0) — no cleanup needed.
-
-Best for: visualizing architecture, data flows, sequences, or state machines during conversations.
+For files that already exist in the project, use file mode with live reload:
 
 ```bash
-echo 'graph TD
-    A[Start] --> B{Decision}
-    B -->|Yes| C[Do Thing]
-    B -->|No| D[Skip]
-    C --> E[End]
-    D --> E' | mermaid-preview-cli
-```
-
-### 2. Live Preview While Editing
-
-Point at a `.mmd` or `.mermaid` file for live reload. Changes are reflected instantly (100ms debounce). Uses fsnotify by default, with stat-based polling as a fallback.
-
-Best for: iterating on diagram files in an editor.
-
-```bash
-mermaid-preview-cli diagram.mmd
-```
-
-### 3. Markdown Documentation
-
-The CLI extracts ` ```mermaid ` fenced blocks from `.md` files automatically. Multiple blocks render stacked with labels.
-
-Best for: previewing diagrams embedded in documentation.
-
-```bash
-mermaid-preview-cli README.md
-```
-
-### 4. Side-by-Side Comparison
-
-Pass multiple files — each opens in its own window.
-
-Best for: comparing diagram variants or reviewing changes.
-
-```bash
-mermaid-preview-cli before.mmd after.mmd
+mermaid-preview-cli diagram.mmd           # single file
+mermaid-preview-cli README.md             # extracts ```mermaid blocks
+mermaid-preview-cli before.mmd after.mmd  # side-by-side comparison
 ```
 
 ## Quick Reference

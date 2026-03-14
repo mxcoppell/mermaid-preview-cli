@@ -11,8 +11,11 @@ import (
 // The window starts offscreen and hidden — JS calls showWindow() after
 // rendering to reveal it fully formed (no flash).
 func createWindow(url string) webview.WebView {
+	// Pre-initialize NSApp as accessory BEFORE webview creates it —
+	// prevents any dock icon from ever appearing.
+	initAccessoryMode()
 	w := webview.New(false)
-	// Move offscreen IMMEDIATELY — before SetTitle/SetSize/Navigate
+	// Hide IMMEDIATELY — before SetTitle/SetSize/Navigate
 	// can trigger any visible window appearance.
 	hideWindowOffscreen(w.Window())
 	w.SetTitle("mermaid-preview-cli")

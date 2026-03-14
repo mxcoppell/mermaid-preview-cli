@@ -40,10 +40,32 @@ static void framelessTimerCallback(CFRunLoopTimerRef timer, void *info) {
     CFRunLoopTimerInvalidate(timer);
 }
 
+// Minimal delegate that keeps the app as an accessory (no dock icon).
+// Must be set BEFORE webview.New() — when webview's constructor sees
+// an existing delegate, it skips creating its own and bypasses the
+// applicationDidFinishLaunching callback that forces Regular policy.
+@interface AccessoryDelegate : NSObject <NSApplicationDelegate>
+@end
+
+@implementation AccessoryDelegate
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
+    return NO;
+}
+@end
+
+// Called BEFORE webview.New — pre-initializes NSApp with our delegate
+// so webview never gets a chance to set Regular activation policy.
+void guiInitAccessoryMode(void) {
+    [NSApplication sharedApplication];
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+    [NSApp setDelegate:[[AccessoryDelegate alloc] init]];
+}
+
 // Called immediately after webview.New — before anything is visible.
 void guiHideWindowOffscreen(void *window) {
     NSWindow *nsWindow = (NSWindow *)window;
     [nsWindow setAlphaValue:0];
+    // Reinforce accessory policy in case webview init overrode it.
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 }
 
@@ -85,13 +107,18 @@ void guiShowWindow(void *window, int width, int height) {
 
     [nsWindow center];
 
-    // Atomic reveal: restore app policy, set alpha, bring to front
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-    [nsWindow setAlphaValue:1];
+    // Bring to front while still invisible (stay accessory — no dock icon)
     [nsWindow makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
     [nsWindow setLevel:NSFloatingWindowLevel];
     [nsWindow setLevel:NSNormalWindowLevel];
+
+    // Fade in (150ms ease-out)
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *ctx) {
+        ctx.duration = 0.15;
+        ctx.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+        [[nsWindow animator] setAlphaValue:1.0];
+    }];
 }
 
 void guiCenterWindow(void *window) {
@@ -150,6 +177,10 @@ int guiSaveFile(void *window, const char *suggestedName, const void *data, int d
 import "C"
 
 import "unsafe"
+
+func initAccessoryMode() {
+	C.guiInitAccessoryMode()
+}
 
 func hideWindowOffscreen(windowHandle unsafe.Pointer) {
 	C.guiHideWindowOffscreen(windowHandle)

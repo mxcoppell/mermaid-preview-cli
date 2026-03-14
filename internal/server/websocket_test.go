@@ -15,8 +15,7 @@ func TestWebSocket_ConnectAndReceive(t *testing.T) {
 		Filename: "test.mmd",
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	addr, err := srv.Start(ctx)
 	if err != nil {
@@ -31,6 +30,9 @@ func TestWebSocket_ConnectAndReceive(t *testing.T) {
 		t.Fatalf("WebSocket dial: %v", err)
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "")
+
+	// Allow server goroutine to register the connection
+	time.Sleep(50 * time.Millisecond)
 
 	// Update content and verify broadcast
 	srv.UpdateContent("graph TD; X-->Y", nil)
@@ -54,8 +56,7 @@ func TestWebSocket_MultipleClients(t *testing.T) {
 		Filename: "test.mmd",
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	addr, err := srv.Start(ctx)
 	if err != nil {
@@ -77,6 +78,9 @@ func TestWebSocket_MultipleClients(t *testing.T) {
 		t.Fatalf("WebSocket dial 2: %v", err)
 	}
 	defer conn2.Close(websocket.StatusNormalClosure, "")
+
+	// Allow server goroutine to register the connections
+	time.Sleep(50 * time.Millisecond)
 
 	// Broadcast should reach both
 	srv.UpdateContent("updated content", nil)

@@ -31,7 +31,7 @@ changelog:
       - '^test:'
       - '^ci:'
 
-brews:
+homebrew_casks:
   - repository:
       owner: mxcoppell
       name: homebrew-tap
@@ -39,6 +39,9 @@ brews:
     homepage: https://github.com/mxcoppell/mermaid-preview-cli
     description: CLI tool for previewing Mermaid diagrams
     license: MIT
-    install: |
-      bin.install "mermaid-preview-cli"
-      (share/"mermaid-preview-cli").install "skills/mermaid-preview-cli.md"
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/mermaid-preview-cli"]
+          end

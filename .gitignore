@@ -20,7 +20,6 @@ docs/
 
 # E2E test artifacts
 e2e/node_modules/
-e2e/package-lock.json
 e2e/test-results/
 e2e/playwright-report/
 

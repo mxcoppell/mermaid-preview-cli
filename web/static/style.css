@@ -397,11 +397,24 @@ body {
     pointer-events: none;
 }
 
-/* Search highlights — use filter for SVG <g> elements */
+/* Search highlights — group-level glow for SVG <g> elements */
 .search-highlight {
     filter: drop-shadow(0 0 3px var(--search-highlight)) drop-shadow(0 0 6px var(--search-highlight));
 }
 
 .search-active {
     filter: drop-shadow(0 0 4px var(--search-active)) drop-shadow(0 0 8px var(--search-active)) drop-shadow(0 0 16px var(--search-active));
+}
+
+/* Inline text highlights — matching words */
+mark.search-mark {
+    background: var(--search-highlight);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+/* SVG background rect injected behind matching text */
+.search-bg-rect {
+    fill: var(--search-highlight);
 }

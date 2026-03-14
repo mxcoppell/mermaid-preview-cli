@@ -354,6 +354,31 @@
         searchCount.textContent = '';
     }
 
+    // Wrap matching substrings in <mark> elements using safe DOM manipulation.
+    function markTextNodes(el, query) {
+        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+        var textNodes = [];
+        var node;
+        while ((node = walker.nextNode())) textNodes.push(node);
+        var lowerQuery = query.toLowerCase();
+        textNodes.forEach(function(tn) {
+            var text = tn.nodeValue;
+            var idx = text.toLowerCase().indexOf(lowerQuery);
+            if (idx === -1) return;
+            var before = text.substring(0, idx);
+            var match = text.substring(idx, idx + query.length);
+            var after = text.substring(idx + query.length);
+            var parent = tn.parentNode;
+            var mark = document.createElement('mark');
+            mark.className = 'search-mark';
+            mark.textContent = match;
+            if (before) parent.insertBefore(document.createTextNode(before), tn);
+            parent.insertBefore(mark, tn);
+            if (after) parent.insertBefore(document.createTextNode(after), tn);
+            parent.removeChild(tn);
+        });
+    }
+
     function performSearch(query) {
         clearHighlights();
         searchMatches = [];
@@ -364,28 +389,72 @@
             return;
         }
 
-        const lowerQuery = query.toLowerCase();
-        const svgs = diagram.querySelectorAll('svg');
+        var lowerQuery = query.toLowerCase();
+        var svgs = diagram.querySelectorAll('svg');
 
+        // Collect leaf text elements (skip parents whose child also matches)
+        var matchedTextEls = [];
         svgs.forEach(function(svg) {
-            const textEls = svg.querySelectorAll('text, tspan, span');
+            var textEls = svg.querySelectorAll('span, tspan, text');
             textEls.forEach(function(textEl) {
-                if (textEl.textContent.toLowerCase().includes(lowerQuery)) {
-                    let group = textEl.closest('.node, .cluster, .actor, .label');
-                    if (group && searchMatches.indexOf(group) === -1) {
-                        searchMatches.push(group);
+                if (!textEl.textContent) return;
+                if (!textEl.textContent.toLowerCase().includes(lowerQuery)) return;
+                // Skip SVG <text> if a child <tspan> also matches (avoid double-counting)
+                var childAlsoMatches = false;
+                for (var i = 0; i < textEl.children.length; i++) {
+                    var childTag = textEl.children[i].tagName;
+                    if ((childTag === 'tspan' || childTag === 'SPAN' || childTag === 'text') &&
+                        textEl.children[i].textContent &&
+                        textEl.children[i].textContent.toLowerCase().includes(lowerQuery)) {
+                        childAlsoMatches = true;
+                        break;
                     }
                 }
+                if (childAlsoMatches) return;
+                matchedTextEls.push(textEl);
             });
         });
 
-        if (searchMatches.length === 0) {
+        if (matchedTextEls.length === 0) {
             searchCount.textContent = '0 results';
             return;
         }
 
-        searchMatches.forEach(function(el) {
-            el.classList.add('search-highlight');
+        matchedTextEls.forEach(function(textEl) {
+            // Inline text highlight
+            if (textEl.tagName === 'SPAN' || textEl.tagName === 'DIV') {
+                markTextNodes(textEl, query);
+            } else {
+                // SVG text/tspan: insert a highlight rect behind the text
+                try {
+                    var bbox = textEl.getBBox();
+                    var pad = 3;
+                    var ns = 'http://www.w3.org/2000/svg';
+                    var rect = document.createElementNS(ns, 'rect');
+                    rect.setAttribute('x', bbox.x - pad);
+                    rect.setAttribute('y', bbox.y - pad);
+                    rect.setAttribute('width', bbox.width + pad * 2);
+                    rect.setAttribute('height', bbox.height + pad * 2);
+                    rect.setAttribute('rx', '3');
+                    rect.setAttribute('class', 'search-bg-rect');
+                    var textRoot = textEl.closest('text') || textEl;
+                    // Copy the text's transform so the rect aligns
+                    var tf = textRoot.getAttribute('transform');
+                    if (tf) rect.setAttribute('transform', tf);
+                    textRoot.parentNode.insertBefore(rect, textRoot);
+                } catch (e) { /* getBBox may fail if hidden */ }
+            }
+
+            // Navigation group: outer node container, or text element as fallback
+            var group = textEl.closest('.node')
+                     || textEl.closest('.cluster')
+                     || textEl.closest('.actor')
+                     || textEl.closest('.label')
+                     || textEl;
+            if (searchMatches.indexOf(group) === -1) {
+                searchMatches.push(group);
+                group.classList.add('search-highlight');
+            }
         });
 
         searchIndex = 0;
@@ -441,6 +510,16 @@
     function clearHighlights() {
         document.querySelectorAll('.search-highlight, .search-active').forEach(function(el) {
             el.classList.remove('search-highlight', 'search-active');
+        });
+        // Remove injected SVG highlight rects
+        document.querySelectorAll('.search-bg-rect').forEach(function(el) {
+            el.remove();
+        });
+        // Unwrap <mark> elements back to plain text
+        document.querySelectorAll('mark.search-mark').forEach(function(mark) {
+            var parent = mark.parentNode;
+            parent.replaceChild(document.createTextNode(mark.textContent), mark);
+            parent.normalize();
         });
     }
 

@@ -6,7 +6,7 @@ Lightweight CLI for AI agents and developers to preview Mermaid diagrams in a na
   <img src="assets/claude-code-sample.png" alt="Claude Code generating a Mermaid diagram rendered by mermaid-preview-cli" width="800">
 </p>
 
-A single Go binary with embedded mermaid.js — no browser, no internet, no Node.js. Designed for AI coding agents (Claude Code, etc.) to visualize diagrams mid-conversation via stdin, and for developers to live-preview diagram files.
+Designed for AI coding agents (Claude Code, etc.) to visualize diagrams mid-conversation via stdin, and for developers to live-preview diagram files.
 
 ## Why
 

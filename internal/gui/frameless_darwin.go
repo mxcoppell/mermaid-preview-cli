@@ -43,7 +43,7 @@ static void framelessTimerCallback(CFRunLoopTimerRef timer, void *info) {
 // Called immediately after webview.New — before anything is visible.
 void guiHideWindowOffscreen(void *window) {
     NSWindow *nsWindow = (NSWindow *)window;
-    [nsWindow setFrameOrigin:NSMakePoint(-10000, -10000)];
+    [nsWindow setAlphaValue:0];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 }
 
@@ -84,6 +84,10 @@ void guiShowWindow(void *window, int width, int height) {
     }
 
     [nsWindow center];
+
+    // Atomic reveal: restore app policy, set alpha, bring to front
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    [nsWindow setAlphaValue:1];
     [nsWindow makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
     [nsWindow setLevel:NSFloatingWindowLevel];

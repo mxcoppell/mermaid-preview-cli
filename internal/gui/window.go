@@ -24,7 +24,7 @@ func createWindow(url string) webview.WebView {
 		mu           sync.Mutex
 	)
 
-	w.Bind("resizeWindow", func(width, height int) {
+	_ = w.Bind("resizeWindow", func(width, height int) {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -45,7 +45,7 @@ func createWindow(url string) webview.WebView {
 	})
 
 	// Window move binding (for dragging borderless window from JS)
-	w.Bind("moveWindowBy", func(dx, dy float64) {
+	_ = w.Bind("moveWindowBy", func(dx, dy float64) {
 		w.Dispatch(func() {
 			moveWindowBy(w.Window(), int(dx), int(dy))
 		})
@@ -54,7 +54,7 @@ func createWindow(url string) webview.WebView {
 	// Reveal the window — called by JS after initial render + auto-shape.
 	// Accepts width/height so resize + frameless + center + reveal happen
 	// in a single atomic Dispatch — no flash.
-	w.Bind("showWindow", func(width, height int) {
+	_ = w.Bind("showWindow", func(width, height int) {
 		w.Dispatch(func() {
 			showWindow(w.Window(), width, height)
 		})

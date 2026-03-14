@@ -21,10 +21,9 @@ func TestFileWatcher_DetectsChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
-	go w.Start(ctx)
+	go func() { _ = w.Start(ctx) }()
 
 	// Wait a moment for watcher to settle
 	time.Sleep(200 * time.Millisecond)
@@ -54,10 +53,9 @@ func TestPollWatcher_DetectsChanges(t *testing.T) {
 
 	w := NewPollWatcher(path, 100*time.Millisecond)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
-	go w.Start(ctx)
+	go func() { _ = w.Start(ctx) }()
 
 	// Wait for initial stat
 	time.Sleep(200 * time.Millisecond)
@@ -80,9 +78,9 @@ func TestPollWatcher_DetectsChanges(t *testing.T) {
 func TestNoopWatcher_NeverSends(t *testing.T) {
 	w := NewNoopWatcher()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
-	go w.Start(ctx)
+	go func() { _ = w.Start(ctx) }()
 
 	select {
 	case <-w.Content():

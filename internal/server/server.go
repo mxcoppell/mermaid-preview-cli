@@ -86,7 +86,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 		<-ctx.Done()
 		shutCtx, shutCancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer shutCancel()
-		s.srv.Shutdown(shutCtx)
+		_ = s.srv.Shutdown(shutCtx)
 	}()
 
 	return ln.Addr().String(), nil
@@ -183,7 +183,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tmpl.Execute(w, data)
+	_ = tmpl.Execute(w, data)
 }
 
 func (s *Server) handleDiagram(w http.ResponseWriter, r *http.Request) {
@@ -192,7 +192,7 @@ func (s *Server) handleDiagram(w http.ResponseWriter, r *http.Request) {
 	s.mu.RUnlock()
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Write([]byte(content))
+	_, _ = w.Write([]byte(content))
 }
 
 func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
@@ -201,7 +201,7 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("shutting down"))
+	_, _ = w.Write([]byte("shutting down"))
 
 	// Shutdown asynchronously so the response is sent
 	go func() {

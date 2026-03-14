@@ -35,6 +35,7 @@ homebrew_casks:
   - repository:
       owner: mxcoppell
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     name: mermaid-preview-cli
     homepage: https://github.com/mxcoppell/mermaid-preview-cli
     description: CLI tool for previewing Mermaid diagrams

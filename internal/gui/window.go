@@ -63,7 +63,7 @@ func createWindow(url string) webview.WebView {
 	// Save file with native NSSavePanel dialog.
 	// JS passes base64-encoded data to avoid UTF-8 issues with binary content.
 	// The CGO function handles main thread dispatch internally via dispatch_sync.
-	w.Bind("saveFileDialog", func(suggestedName, base64Data, extension string) bool {
+	_ = w.Bind("saveFileDialog", func(suggestedName, base64Data, extension string) bool {
 		data, err := base64.StdEncoding.DecodeString(base64Data)
 		if err != nil {
 			return false

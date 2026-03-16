@@ -10,9 +10,18 @@ import (
 )
 
 func main() {
-	// Check for internal GUI mode before normal flag parsing.
-	// This keeps GUI startup fast — no cobra/flag overhead.
+	// Check for internal flags before normal flag parsing.
+	// This keeps subprocess startup fast — no cobra/flag overhead.
 	for _, arg := range os.Args[1:] {
+		if strings.HasPrefix(arg, "--internal-host=") {
+			cfgPath := strings.TrimPrefix(arg, "--internal-host=")
+			if err := gui.RunHost(cfgPath); err != nil {
+				fmt.Fprintf(os.Stderr, "mermaid-preview-cli: error: %v\n", err)
+				os.Exit(2)
+			}
+			return
+		}
+		// Legacy single-window mode
 		if strings.HasPrefix(arg, "--internal-gui=") {
 			cfgPath := strings.TrimPrefix(arg, "--internal-gui=")
 			if err := gui.Run(cfgPath); err != nil {

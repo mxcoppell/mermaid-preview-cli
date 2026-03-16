@@ -11,8 +11,9 @@ import (
 // The window starts offscreen and hidden — JS calls showWindow() after
 // rendering to reveal it fully formed (no flash).
 func createWindow(url string) webview.WebView {
-	// Pre-initialize NSApp as accessory BEFORE webview creates it —
-	// prevents any dock icon from ever appearing.
+	// Pre-initialize NSApp as accessory BEFORE webview creates it.
+	// Used by legacy gui.Run() single-window path; the host path
+	// uses initHostMode() instead.
 	initAccessoryMode()
 	w := webview.New(false)
 	// Hide IMMEDIATELY — before SetTitle/SetSize/Navigate

@@ -13,6 +13,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/mxcoppell/mermaid-preview-cli/internal/gui"
+	"github.com/mxcoppell/mermaid-preview-cli/internal/ipc"
 	"github.com/mxcoppell/mermaid-preview-cli/internal/parser"
 	"github.com/mxcoppell/mermaid-preview-cli/internal/version"
 )
@@ -27,6 +28,7 @@ type Config struct {
 	Poll    time.Duration
 	Files   []string
 	IsStdin bool
+	Verbose bool
 }
 
 func Execute() int {
@@ -62,6 +64,7 @@ func parseFlags(args []string, stdin *os.File) (Config, error) {
 	fs.DurationVar(&cfg.Poll, "poll", 0, "")
 	fs.BoolVar(&showVersion, "version", false, "")
 	fs.BoolVar(&showVersion, "v", false, "")
+	fs.BoolVar(&cfg.Verbose, "verbose", false, "")
 
 	// Custom help handling
 	var showHelp bool
@@ -153,6 +156,7 @@ func run(cfg Config) error {
 			WatchFiles: watchFiles,
 			Poll:       cfg.Poll,
 			NoWatch:    cfg.NoWatch,
+			Verbose:    cfg.Verbose,
 		}
 
 		if err := spawnGUI(guiCfg); err != nil {
@@ -164,6 +168,44 @@ func run(cfg Config) error {
 }
 
 func spawnGUI(cfg gui.Config) error {
+	// Try IPC to existing host first
+	if trySendIPC(cfg) {
+		return nil
+	}
+
+	// No host running — spawn one
+	return spawnHostProcess(cfg)
+}
+
+// trySendIPC attempts to connect to an existing host and send the config.
+func trySendIPC(cfg gui.Config) bool {
+	conn, err := ipc.Dial()
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+
+	tmpPath, err := gui.WriteConfig(cfg)
+	if err != nil {
+		return false
+	}
+
+	resp, err := ipc.SendOpen(conn, tmpPath)
+	if err != nil {
+		os.Remove(tmpPath)
+		return false
+	}
+	if !resp.OK {
+		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: host error: %s\n", resp.Error)
+		return false
+	}
+	return true
+}
+
+// spawnHostProcess starts a new host process with the initial config.
+func spawnHostProcess(cfg gui.Config) error {
+	ipc.CleanStaleSocket()
+
 	tmpPath, err := gui.WriteConfig(cfg)
 	if err != nil {
 		return fmt.Errorf("writing GUI config: %w", err)
@@ -174,11 +216,11 @@ func spawnGUI(cfg gui.Config) error {
 		return fmt.Errorf("finding executable: %w", err)
 	}
 
-	cmd := exec.Command(exePath, "--internal-gui="+tmpPath)
+	cmd := exec.Command(exePath, "--internal-host="+tmpPath)
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
 		os.Remove(tmpPath)
-		return fmt.Errorf("spawning GUI: %w", err)
+		return fmt.Errorf("spawning host: %w", err)
 	}
 
 	return nil
@@ -198,6 +240,7 @@ FLAGS:
     -t, --theme THEME     dark | light | system (default: system)
     -w, --no-watch        Disable file watching
         --poll INTERVAL   Stat-based polling fallback (e.g. 500ms)
+        --verbose         Show informational messages on stderr
     -v, --version         Print version
     -h, --help            Print help
 

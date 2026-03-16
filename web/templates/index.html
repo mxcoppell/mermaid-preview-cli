@@ -3,30 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Filename}} — mermaid-preview-cli</title>
+    <title>{{.Label}} — mermaid-preview-cli</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="/static/mermaid.min.js"></script>
 </head>
 <body>
     <!-- Floating toolbar -->
     <div id="toolbar" class="floating-toolbar">
-        <button id="zoom-in" class="tb-btn" title="Zoom in (+)">+</button>
-        <button id="zoom-out" class="tb-btn" title="Zoom out (&#8722;)">&#8722;</button>
+        <button id="zoom-in" class="tb-btn" title="Zoom in (+)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+        <button id="zoom-out" class="tb-btn" title="Zoom out (-)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
         <span id="zoom-level" class="zoom-label">Fit</span>
-        <button id="zoom-reset" class="tb-btn" title="Reset zoom (0)">&#8857;</button>
+        <button id="zoom-reset" class="tb-btn" title="Reset zoom (0)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V3a1 1 0 0 1 1-1h3"/><path d="M10 2h3a1 1 0 0 1 1 1v3"/><path d="M14 10v3a1 1 0 0 1-1 1h-3"/><path d="M6 14H3a1 1 0 0 1-1-1v-3"/></svg></button>
         <div class="tb-sep"></div>
-        <button id="search-btn" class="tb-btn" title="Search (Cmd/Ctrl+F)">&#8981;</button>
-        <button id="theme-toggle" class="tb-btn" title="Toggle theme (T)">&#9680;</button>
+        <button id="search-btn" class="tb-btn" title="Search (Cmd/Ctrl+F)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="4"/><line x1="10" y1="10" x2="13.5" y2="13.5"/></svg></button>
+        <button id="theme-toggle" class="tb-btn" title="Toggle theme (T)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5"/><path d="M8 3a5 5 0 0 1 0 10z" fill="currentColor"/></svg></button>
         <div class="dropdown">
-            <button id="export-btn" class="tb-btn" title="Export">&#10515;</button>
+            <button id="export-btn" class="tb-btn" title="Export"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8"/><path d="M4.5 7L8 10.5 11.5 7"/><path d="M3 13h10"/></svg></button>
             <div id="export-menu" class="dropdown-menu hidden">
                 <button id="export-svg">Export SVG</button>
                 <button id="export-png">Export PNG</button>
             </div>
         </div>
         <div class="tb-sep"></div>
-        <button id="close-btn" class="tb-btn tb-close" title="Close (Esc)">&#215;</button>
+        <button id="close-btn" class="tb-btn tb-close" title="Close (Esc)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button>
     </div>
+
+    {{if .Label}}
+    <!-- Color tag badge -->
+    <div id="tag-badge" class="tag-badge" style="--tag-color: {{.ColorHex}}">
+        <span class="tag-dot">&#x25CF;</span>
+        <span class="tag-label">{{.Label}}</span>
+    </div>
+    {{end}}
 
     <!-- Floating search -->
     <div id="search-bar" class="search-float hidden">
@@ -62,6 +70,8 @@
         window.__CONFIG__ = {
             theme: "{{.Theme}}",
             filename: "{{.Filename}}",
+            label: "{{.Label}}",
+            colorHex: "{{.ColorHex}}",
             isMarkdown: {{.IsMarkdown}},
             blocks: {{.Blocks}},
             noWatch: {{.NoWatch}}

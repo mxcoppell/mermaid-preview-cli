@@ -178,6 +178,30 @@ body {
     padding: 0 1px;
 }
 
+/* ─── Tag Badge ───────────────────────────────────────── */
+.tag-badge {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px 4px 8px;
+    background: var(--toolbar-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid var(--toolbar-border);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    user-select: none;
+    cursor: default;
+    transition: opacity 0.2s ease;
+}
+.tag-badge:hover { opacity: 0.3; }
+.tag-dot { color: var(--tag-color); font-size: 14px; line-height: 1; }
+.tag-label { color: var(--tb-text); font-size: 12px; font-weight: 500; white-space: nowrap; }
+
 /* ─── Floating Search ──────────────────────────────────── */
 .search-float {
     position: fixed;

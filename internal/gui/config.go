@@ -17,6 +17,7 @@ type Config struct {
 	WatchFiles []string      `json:"watch_files,omitempty"`
 	Poll       time.Duration `json:"poll,omitempty"`
 	NoWatch    bool          `json:"no_watch"`
+	Verbose    bool          `json:"verbose"`
 }
 
 // WriteConfig serializes cfg to a temp JSON file and returns the path.

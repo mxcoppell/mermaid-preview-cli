@@ -89,6 +89,26 @@ func TestParseFlags_ShortFlags(t *testing.T) {
 	}
 }
 
+func TestParseFlags_Verbose(t *testing.T) {
+	cfg, err := parseFlags([]string{"--verbose", "test.mmd"}, devNull(t))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !cfg.Verbose {
+		t.Error("expected Verbose = true")
+	}
+}
+
+func TestParseFlags_VerboseDefault(t *testing.T) {
+	cfg, err := parseFlags([]string{"test.mmd"}, devNull(t))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.Verbose {
+		t.Error("expected Verbose = false by default")
+	}
+}
+
 func TestParseFlags_InvalidTheme(t *testing.T) {
 	_, err := parseFlags([]string{"--theme", "invalid", "test.mmd"}, devNull(t))
 	if err == nil {

@@ -30,20 +30,7 @@ static void applyFrameless(void *window) {
     [nsWindow setMovableByWindowBackground:NO];
 }
 
-static int _frameless_applied = 0;
-static void *_pending_frameless_window = NULL;
-
-static void framelessTimerCallback(CFRunLoopTimerRef timer, void *info) {
-    if (!_pending_frameless_window) return;
-    applyFrameless(_pending_frameless_window);
-    _frameless_applied = 1;
-    CFRunLoopTimerInvalidate(timer);
-}
-
-// Minimal delegate that keeps the app as an accessory (no dock icon).
-// Must be set BEFORE webview.New() — when webview's constructor sees
-// an existing delegate, it skips creating its own and bypasses the
-// applicationDidFinishLaunching callback that forces Regular policy.
+// Minimal delegate for legacy single-window accessory mode (gui.Run path).
 @interface AccessoryDelegate : NSObject <NSApplicationDelegate>
 @end
 
@@ -53,52 +40,26 @@ static void framelessTimerCallback(CFRunLoopTimerRef timer, void *info) {
 }
 @end
 
-// Called BEFORE webview.New — pre-initializes NSApp with our delegate
-// so webview never gets a chance to set Regular activation policy.
 void guiInitAccessoryMode(void) {
     [NSApplication sharedApplication];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
     [NSApp setDelegate:[[AccessoryDelegate alloc] init]];
 }
 
-// Called immediately after webview.New — before anything is visible.
 void guiHideWindowOffscreen(void *window) {
     NSWindow *nsWindow = (NSWindow *)window;
     [nsWindow setAlphaValue:0];
-    // Reinforce accessory policy in case webview init overrode it.
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 }
 
-// Registers a timer that applies frameless styling once the run loop starts.
-void guiScheduleFrameless(void *window) {
-    _pending_frameless_window = window;
-    _frameless_applied = 0;
-
-    CFRunLoopTimerContext ctx = {0, NULL, NULL, NULL, NULL};
-    CFRunLoopTimerRef timer = CFRunLoopTimerCreate(
-        kCFAllocatorDefault,
-        CFAbsoluteTimeGetCurrent() + 0.05,  // 50ms — just need the run loop active
-        0,
-        0, 0,
-        framelessTimerCallback,
-        &ctx
-    );
-    CFRunLoopAddTimer(CFRunLoopGetMain(), timer, kCFRunLoopCommonModes);
-    CFRelease(timer);
+void guiApplyFramelessDirect(void *window) {
+    applyFrameless(window);
 }
 
-// Atomic: apply frameless + resize + center + reveal. Called by JS after render.
 void guiShowWindow(void *window, int width, int height) {
     NSWindow *nsWindow = (NSWindow *)window;
 
-    // Ensure frameless
-    if (!_frameless_applied) {
-        applyFrameless(window);
-        _frameless_applied = 1;
-    }
     applyFrameless(window);
 
-    // Resize
     if (width > 0 && height > 0) {
         NSRect frame = [nsWindow frame];
         frame.size = NSMakeSize(width, height);
@@ -107,7 +68,7 @@ void guiShowWindow(void *window, int width, int height) {
 
     [nsWindow center];
 
-    // Bring to front while still invisible (stay accessory — no dock icon)
+    // Bring to front while still invisible
     [nsWindow makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
     [nsWindow setLevel:NSFloatingWindowLevel];
@@ -133,18 +94,31 @@ void guiMoveWindowBy(void *window, int dx, int dy) {
     frame.origin.y -= dy;
     [nsWindow setFrameOrigin:frame.origin];
 }
+
+void guiActivateWindow(void *window) {
+    NSWindow *nsWindow = (NSWindow *)window;
+    [nsWindow makeKeyAndOrderFront:nil];
+    [NSApp activateIgnoringOtherApps:YES];
+}
+
+// Close an NSWindow directly without going through webview's destructor.
+// webview.Destroy() calls deplete_run_loop_event_queue() which deadlocks
+// when called from within a GCD main queue block.
+void guiCloseWindow(void *window) {
+    NSWindow *nsWindow = (NSWindow *)window;
+    [nsWindow setDelegate:nil];
+    [nsWindow close];
+}
+
 // guiSaveFile shows a native NSSavePanel and writes data to the chosen path.
-// Returns 1 if the file was saved, 0 if cancelled.
 int guiSaveFile(void *window, const char *suggestedName, const void *data, int dataLen, const char *extension) {
     __block int result = 0;
 
-    // Must run on main thread synchronously so the Go binding can return the result.
     dispatch_block_t work = ^{
         NSSavePanel *panel = [NSSavePanel savePanel];
         [panel setNameFieldStringValue:[NSString stringWithUTF8String:suggestedName]];
         [panel setCanCreateDirectories:YES];
 
-        // Set allowed file type
         NSString *ext = [NSString stringWithUTF8String:extension];
         if ([ext isEqualToString:@"svg"]) {
             panel.allowedContentTypes = @[UTTypeSVG];
@@ -154,7 +128,6 @@ int guiSaveFile(void *window, const char *suggestedName, const void *data, int d
 
         NSWindow *nsWindow = (NSWindow *)window;
         NSModalResponse response = [panel runModal];
-        // Re-focus the webview window after the dialog closes.
         [nsWindow makeKeyAndOrderFront:nil];
 
         if (response == NSModalResponseOK) {
@@ -173,6 +146,34 @@ int guiSaveFile(void *window, const char *suggestedName, const void *data, int d
 
     return result;
 }
+
+// Legacy: schedule frameless via timer (used by gui.Run single-window path)
+static int _frameless_applied = 0;
+static void *_pending_frameless_window = NULL;
+
+static void framelessTimerCallback(CFRunLoopTimerRef timer, void *info) {
+    if (!_pending_frameless_window) return;
+    applyFrameless(_pending_frameless_window);
+    _frameless_applied = 1;
+    CFRunLoopTimerInvalidate(timer);
+}
+
+void guiScheduleFrameless(void *window) {
+    _pending_frameless_window = window;
+    _frameless_applied = 0;
+
+    CFRunLoopTimerContext ctx = {0, NULL, NULL, NULL, NULL};
+    CFRunLoopTimerRef timer = CFRunLoopTimerCreate(
+        kCFAllocatorDefault,
+        CFAbsoluteTimeGetCurrent() + 0.05,
+        0,
+        0, 0,
+        framelessTimerCallback,
+        &ctx
+    );
+    CFRunLoopAddTimer(CFRunLoopGetMain(), timer, kCFRunLoopCommonModes);
+    CFRelease(timer);
+}
 */
 import "C"
 
@@ -184,6 +185,10 @@ func initAccessoryMode() {
 
 func hideWindowOffscreen(windowHandle unsafe.Pointer) {
 	C.guiHideWindowOffscreen(windowHandle)
+}
+
+func applyFramelessDirect(windowHandle unsafe.Pointer) {
+	C.guiApplyFramelessDirect(windowHandle)
 }
 
 func scheduleFrameless(windowHandle unsafe.Pointer) {
@@ -200,6 +205,14 @@ func centerWindow(windowHandle unsafe.Pointer) {
 
 func moveWindowBy(windowHandle unsafe.Pointer, dx, dy int) {
 	C.guiMoveWindowBy(windowHandle, C.int(dx), C.int(dy))
+}
+
+func activateWindow(windowHandle unsafe.Pointer) {
+	C.guiActivateWindow(windowHandle)
+}
+
+func closeWindow(windowHandle unsafe.Pointer) {
+	C.guiCloseWindow(windowHandle)
 }
 
 func saveFile(windowHandle unsafe.Pointer, suggestedName string, data []byte, extension string) bool {

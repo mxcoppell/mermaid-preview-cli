@@ -22,6 +22,9 @@ type Config struct {
 	Content    string
 	Filename   string
 	IsMarkdown bool
+	Verbose    bool
+	Label      string // display name for window badge
+	ColorHex   string // hex color for window badge (e.g. "#FF453A")
 }
 
 // Server is the HTTP server for mermaid-preview-cli.
@@ -180,6 +183,8 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		"IsMarkdown": s.cfg.IsMarkdown,
 		"Blocks":     blocksJSON,
 		"NoWatch":    false,
+		"Label":      s.cfg.Label,
+		"ColorHex":   s.cfg.ColorHex,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

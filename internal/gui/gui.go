@@ -26,12 +26,21 @@ func Run(cfgPath string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Derive display label for legacy single-window path
+	label := cfg.Filename
+	if label == "" || label == "." {
+		label = "Diagram 1"
+	}
+
 	srv := server.New(server.Config{
 		Port:       cfg.Port,
 		Theme:      cfg.Theme,
 		Content:    cfg.Content,
 		Filename:   cfg.Filename,
 		IsMarkdown: cfg.IsMarkdown,
+		Verbose:    cfg.Verbose,
+		Label:      label,
+		ColorHex:   Palette[0].Hex,
 	})
 
 	addr, err := srv.Start(ctx)
@@ -39,7 +48,9 @@ func Run(cfgPath string) error {
 		return fmt.Errorf("starting server: %w", err)
 	}
 	url := fmt.Sprintf("http://%s", addr)
-	fmt.Fprintf(os.Stderr, "mermaid-preview-cli: listening on %s (%s)\n", url, cfg.Filename)
+	if cfg.Verbose {
+		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: listening on %s (%s)\n", url, cfg.Filename)
+	}
 
 	// Start file watchers
 	if !cfg.NoWatch && len(cfg.WatchFiles) > 0 {
@@ -100,7 +111,7 @@ func Run(cfgPath string) error {
 
 	// If the server exits for any reason (e.g. auto-shutdown after 30s
 	// with no WebSocket clients), terminate the webview so the process
-	// doesn't linger invisibly (no dock icon).
+	// doesn't linger invisibly.
 	go func() {
 		srv.Wait()
 		w.Terminate()
@@ -114,7 +125,9 @@ func Run(cfgPath string) error {
 	w.Run()
 
 	// Clean up
-	fmt.Fprintf(os.Stderr, "mermaid-preview-cli: shutting down\n")
+	if cfg.Verbose {
+		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: shutting down\n")
+	}
 	srv.Shutdown()
 	srv.Wait()
 	return nil

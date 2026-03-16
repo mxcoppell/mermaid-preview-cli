@@ -260,7 +260,7 @@
     let winStartScreenY = 0;
 
     diagramContainer.addEventListener('mousedown', function(e) {
-        if (e.target.closest('.floating-toolbar, .search-float, button, .dropdown-menu')) return;
+        if (e.target.closest('.floating-toolbar, .search-float, .tag-badge, button, .dropdown-menu')) return;
 
         // If clicking on the diagram content, pan
         if (e.target.closest('#diagram')) {
@@ -577,7 +577,7 @@
     });
 
     function baseName() {
-        return (config.filename || 'diagram').replace(/\.[^.]+$/, '');
+        return (config.label || config.filename || 'diagram').replace(/\.[^.]+$/, '');
     }
 
     // Encode string as base64 (UTF-8 safe)
@@ -661,6 +661,7 @@
         }
 
         if (e.key === 'Escape') {
+            e.preventDefault();
             if (!searchBar.classList.contains('hidden')) {
                 closeSearch();
             } else {

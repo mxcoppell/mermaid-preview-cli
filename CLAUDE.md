@@ -44,6 +44,7 @@ mermaid-preview-cli README.md
 | `-t, --theme THEME` | system | dark, light, or system |
 | `-w, --no-watch` | false | Disable file watching |
 | `--poll INTERVAL` | - | Stat-based polling (e.g. 500ms) |
+| `--verbose` | false | Show informational messages on stderr |
 | `-v, --version` | - | Print version |
 | `-h, --help` | - | Print help |
 
@@ -66,9 +67,11 @@ mermaid-preview-cli: error: <message>                                # exit code
 ## Architecture
 
 macOS-only Go binary with embedded mermaid.js and a native frameless webview
-(`github.com/webview/webview_go`). Dual-mode binary: the CLI reads input, writes
-a temp config, spawns itself with `--internal-gui`, and exits. The GUI process
-runs an HTTP server + webview event loop.
+(`github.com/webview/webview_go`). Two-process model: CLI spawns GUI subprocess
+via `--internal-host=<config.json>`, exits immediately. Multi-window host: First
+invocation spawns a persistent host process. Subsequent invocations join via IPC
+socket, opening new windows in the same process. The host manages all windows,
+the dock icon, and the NSApp event loop.
 
 ## Build & Test
 
@@ -96,12 +99,18 @@ to visualize, preview, or display a Mermaid diagram.
 ## Project Structure
 
 ```
-main.go                              # entrypoint → cmd.Execute() or gui.Run()
-cmd/root.go                          # flag parsing, config, spawn GUI process
-internal/gui/gui.go                  # GUI entry point: server + webview lifecycle
-internal/gui/window.go               # webview creation, JS bindings
+main.go                              # entrypoint → cmd.Execute(), gui.RunHost(), or gui.Run()
+cmd/root.go                          # flag parsing, config, IPC-first spawn
+internal/gui/host.go                 # multi-window host: IPC, window management, lifecycle
+internal/gui/gui.go                  # legacy single-window GUI entry point
+internal/gui/window.go               # webview creation, JS bindings (legacy path)
 internal/gui/config.go               # CLI→GUI IPC via temp JSON file
-internal/gui/frameless_darwin.go     # macOS frameless window (Cocoa/CGO)
+internal/gui/frameless_darwin.go     # macOS frameless window, save panel (Cocoa/CGO)
+internal/gui/dockicon_darwin.go      # programmatic dock icon rendering (CoreGraphics/CGO)
+internal/gui/dockmenu_darwin.go      # HostDelegate, dock right-click menu, NSApp init
+internal/gui/dockmenu_callbacks_darwin.go  # CGO export callbacks for dock menu
+internal/ipc/ipc.go                  # Unix socket IPC client (Dial, SendOpen)
+internal/ipc/server.go               # Unix socket IPC server
 internal/server/server.go            # HTTP server, routes, lifecycle
 internal/server/websocket.go         # WebSocket broadcast (mutex+slice)
 internal/watcher/watcher.go          # fsnotify + poll fallback
@@ -112,6 +121,8 @@ web/templates/index.html             # single-page template
 web/static/app.js                    # frontend logic (vanilla JS)
 web/static/style.css                 # dark/light theme CSS
 web/static/mermaid.min.js            # vendored mermaid IIFE build
+scripts/gen-icon.m                   # standalone dock icon PNG generator
+assets/dock-icon.png                 # reference dock icon image
 testdata/                            # test fixtures (.mmd, .md)
 e2e/                                 # Playwright E2E tests
 ```

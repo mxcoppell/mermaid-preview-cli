@@ -33,7 +33,7 @@ export async function startServer(
 ): Promise<ServerInstance> {
   ensureBinary();
 
-  const args = ['--port', '0', ...extraArgs, filePath];
+  const args = ['--verbose', '--port', '0', ...extraArgs, filePath];
   const proc = spawn(BINARY_PATH, args, {
     cwd: PROJECT_ROOT,
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -53,7 +53,7 @@ export async function startServerWithStdin(
 ): Promise<ServerInstance> {
   ensureBinary();
 
-  const args = ['--port', '0', ...extraArgs];
+  const args = ['--verbose', '--port', '0', ...extraArgs];
   const proc = spawn(BINARY_PATH, args, {
     cwd: PROJECT_ROOT,
     stdio: ['pipe', 'pipe', 'pipe'],

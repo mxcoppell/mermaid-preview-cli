@@ -61,12 +61,16 @@ func SendOpen(conn net.Conn, cfgPath string) (OpenResponse, error) {
 	}
 	data = append(data, '\n')
 
-	conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+	if err := conn.SetWriteDeadline(time.Now().Add(2 * time.Second)); err != nil {
+		return OpenResponse{}, fmt.Errorf("set write deadline: %w", err)
+	}
 	if _, err := conn.Write(data); err != nil {
 		return OpenResponse{}, fmt.Errorf("write request: %w", err)
 	}
 
-	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		return OpenResponse{}, fmt.Errorf("set read deadline: %w", err)
+	}
 	buf := make([]byte, 4096)
 	n, err := conn.Read(buf)
 	if err != nil {

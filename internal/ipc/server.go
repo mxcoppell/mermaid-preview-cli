@@ -62,13 +62,13 @@ func (s *Server) handleConn(conn net.Conn) {
 	if err := json.Unmarshal(scanner.Bytes(), &req); err != nil {
 		resp := OpenResponse{Error: "invalid request"}
 		data, _ := json.Marshal(resp)
-		conn.Write(append(data, '\n'))
+		_, _ = conn.Write(append(data, '\n'))
 		return
 	}
 
 	resp := s.handler(req)
 	data, _ := json.Marshal(resp)
-	conn.Write(append(data, '\n'))
+	_, _ = conn.Write(append(data, '\n'))
 }
 
 // Close stops the server and removes the socket file.

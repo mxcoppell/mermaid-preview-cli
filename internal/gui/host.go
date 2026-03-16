@@ -172,9 +172,7 @@ func (h *Host) createWindow(cfg Config) (string, error) {
 		return "", fmt.Errorf("starting server: %w", err)
 	}
 	url := fmt.Sprintf("http://%s", addr)
-	if h.verbose {
-		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: listening on %s (%s)\n", url, cfg.Filename)
-	}
+	fmt.Fprintf(os.Stderr, "mermaid-preview-cli: listening on %s (%s)\n", url, label)
 
 	// Start file watchers
 	h.startFileWatchers(wCtx, cfg, srv)

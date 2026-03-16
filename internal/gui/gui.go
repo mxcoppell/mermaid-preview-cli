@@ -48,9 +48,7 @@ func Run(cfgPath string) error {
 		return fmt.Errorf("starting server: %w", err)
 	}
 	url := fmt.Sprintf("http://%s", addr)
-	if cfg.Verbose {
-		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: listening on %s (%s)\n", url, cfg.Filename)
-	}
+	fmt.Fprintf(os.Stderr, "mermaid-preview-cli: listening on %s (%s)\n", url, label)
 
 	// Start file watchers
 	if !cfg.NoWatch && len(cfg.WatchFiles) > 0 {

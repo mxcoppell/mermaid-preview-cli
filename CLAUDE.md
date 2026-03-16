@@ -76,7 +76,7 @@ the dock icon, and the NSApp event loop.
 ## Build & Test
 
 ```bash
-go build -ldflags="-s -w" -o bin/mermaid-preview-cli .   # build
+go build -ldflags="-s -w" -o bin/mermaid-preview-cli ./cmd/mermaid-preview-cli  # build
 go test ./...                                         # unit tests
 cd e2e && npm ci && npx playwright test               # E2E tests
 ```
@@ -99,7 +99,7 @@ to visualize, preview, or display a Mermaid diagram.
 ## Project Structure
 
 ```
-main.go                              # entrypoint → cmd.Execute(), gui.RunHost(), or gui.Run()
+cmd/mermaid-preview-cli/main.go      # entrypoint → cmd.Execute(), gui.RunHost(), or gui.Run()
 cmd/root.go                          # flag parsing, config, IPC-first spawn
 internal/gui/host.go                 # multi-window host: IPC, window management, lifecycle
 internal/gui/gui.go                  # legacy single-window GUI entry point

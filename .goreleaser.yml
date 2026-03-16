@@ -1,7 +1,7 @@
 version: 2
 
 builds:
-  - main: .
+  - main: ./cmd/mermaid-preview-cli
     binary: mermaid-preview-cli
     ldflags:
       - -s -w -X github.com/mxcoppell/mermaid-preview-cli/internal/version.Version={{.Version}}

@@ -9,14 +9,14 @@ export interface ServerInstance {
 }
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const BINARY_PATH = path.join(PROJECT_ROOT, 'bin', 'mermaid-preview-cli');
+const BINARY_PATH = path.join(PROJECT_ROOT, 'mermaid-preview-cli');
 
 /**
  * Build the Go binary if it doesn't already exist.
  */
 function ensureBinary(): void {
   if (!fs.existsSync(BINARY_PATH)) {
-    execFileSync('go', ['build', '-o', 'bin/mermaid-preview-cli', '.'], {
+    execFileSync('go', ['build', '-o', 'mermaid-preview-cli', './cmd/mermaid-preview-cli'], {
       cwd: PROJECT_ROOT,
       stdio: 'pipe',
     });

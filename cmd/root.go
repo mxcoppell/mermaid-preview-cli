@@ -136,14 +136,22 @@ func run(cfg Config) error {
 			}
 		}
 
-		// Build watch file list
+		// Build watch file list and normalize path for dedup
 		var watchFiles []string
-		if !cfg.NoWatch && !cfg.IsStdin {
+		var filePath string
+		if !cfg.IsStdin {
 			absPath, err := filepath.Abs(file)
 			if err != nil {
 				return fmt.Errorf("resolving path: %w", err)
 			}
-			watchFiles = []string{absPath}
+			resolved, err := filepath.EvalSymlinks(absPath)
+			if err != nil {
+				resolved = absPath
+			}
+			filePath = resolved
+			if !cfg.NoWatch {
+				watchFiles = []string{absPath}
+			}
 		}
 
 		// Spawn GUI process
@@ -157,55 +165,86 @@ func run(cfg Config) error {
 			Poll:       cfg.Poll,
 			NoWatch:    cfg.NoWatch,
 			Verbose:    cfg.Verbose,
+			FilePath:   filePath,
 		}
 
-		if err := spawnGUI(guiCfg); err != nil {
+		resp, err := spawnGUI(guiCfg)
+		if err != nil {
 			return err
+		}
+
+		// Print confirmation to stdout for agent consumption.
+		displayName := filepath.Base(file)
+		if cfg.IsStdin {
+			displayName = "stdin"
+		}
+		if resp.Reused {
+			fmt.Fprintf(os.Stdout, "Previewing %s (reused)\n", displayName)
+		} else {
+			fmt.Fprintf(os.Stdout, "Previewing %s\n", displayName)
 		}
 	}
 
 	return nil
 }
 
-func spawnGUI(cfg gui.Config) error {
+func spawnGUI(cfg gui.Config) (ipc.OpenResponse, error) {
 	// Try IPC to existing host first
-	if trySendIPC(cfg) {
-		return nil
+	if resp, ok := trySendIPC(cfg); ok {
+		return resp, nil
 	}
 
 	// No host running — spawn one
-	return spawnHostProcess(cfg)
+	err := spawnHostProcess(cfg)
+	if err != nil {
+		// Lost race — another process spawned the host, retry IPC.
+		if resp, ok := trySendIPC(cfg); ok {
+			return resp, nil
+		}
+		return ipc.OpenResponse{}, err
+	}
+
+	waitForHost()
+	return ipc.OpenResponse{OK: true}, nil
 }
 
 // trySendIPC attempts to connect to an existing host and send the config.
-func trySendIPC(cfg gui.Config) bool {
+func trySendIPC(cfg gui.Config) (ipc.OpenResponse, bool) {
 	conn, err := ipc.Dial()
 	if err != nil {
-		return false
+		return ipc.OpenResponse{}, false
 	}
 	defer conn.Close()
 
 	tmpPath, err := gui.WriteConfig(cfg)
 	if err != nil {
-		return false
+		return ipc.OpenResponse{}, false
 	}
 
 	resp, err := ipc.SendOpen(conn, tmpPath)
 	if err != nil {
 		os.Remove(tmpPath)
-		return false
+		return ipc.OpenResponse{}, false
 	}
 	if !resp.OK {
 		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: host error: %s\n", resp.Error)
-		return false
+		return ipc.OpenResponse{}, false
 	}
-	return true
+	return resp, true
+}
+
+// waitForHost polls until the IPC socket accepts connections (up to ~2.5s).
+func waitForHost() {
+	for range 50 {
+		if ipc.IsHostRunning() {
+			return
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
 }
 
 // spawnHostProcess starts a new host process with the initial config.
 func spawnHostProcess(cfg gui.Config) error {
-	ipc.CleanStaleSocket()
-
 	tmpPath, err := gui.WriteConfig(cfg)
 	if err != nil {
 		return fmt.Errorf("writing GUI config: %w", err)
@@ -252,6 +291,10 @@ AGENT TOOL USAGE:
     Pipe mermaid source to stdin. The CLI opens a native preview window
     and exits immediately (exit code 0). No server process is left
     running from the CLI's perspective.
+
+    On success, prints "Previewing <name>" to stdout. If a file is
+    already open, prints "Previewing <name> (reused)" and activates
+    the existing window instead of opening a duplicate.
 
     Example from an LLM agent:
         echo "graph TD; A-->B-->C" | mermaid-preview-cli

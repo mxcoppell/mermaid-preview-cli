@@ -19,11 +19,12 @@ type OpenResponse struct {
 	OK       bool   `json:"ok"`
 	WindowID string `json:"window_id,omitempty"`
 	Error    string `json:"error,omitempty"`
+	Reused   bool   `json:"reused,omitempty"`
 }
 
-// SocketPath returns the Unix socket path for IPC.
+// SocketPath returns the Unix socket path for IPC, scoped to the current user.
 func SocketPath() string {
-	return filepath.Join(os.TempDir(), "mermaid-preview-cli.sock")
+	return filepath.Join(os.TempDir(), fmt.Sprintf("mermaid-preview-cli-%d.sock", os.Getuid()))
 }
 
 // Dial connects to the host process with a timeout.

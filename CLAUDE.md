@@ -11,6 +11,10 @@ frameless window and exits immediately (exit code 0).
 echo "graph TD; A-->B-->C" | mermaid-preview-cli
 ```
 
+On success, the CLI prints `Previewing <name>` to **stdout** so agents can
+confirm the window opened. If a file is already open, it prints
+`Previewing <name> (reused)` and activates the existing window (no duplicate).
+
 This is the recommended way for agents to show diagrams. The window
 stays open after the CLI exits.
 
@@ -54,12 +58,18 @@ mermaid-preview-cli README.md
 - `1` — argument error (bad flags, missing file)
 - `2` — runtime error (port in use, read failure)
 
-## Stderr Format
+## Output Format
 
-All output is structured: `mermaid-preview-cli: <message>`
-
+**Stdout** (agent-consumable confirmation):
 ```
-mermaid-preview-cli: listening on http://127.0.0.1:52341 (flow.mmd)  # server mode
+Previewing flowchart.mmd              # new window opened
+Previewing flowchart.mmd (reused)     # existing window activated
+Previewing stdin                      # stdin input
+```
+
+**Stderr** (structured diagnostics, `--verbose` for info messages):
+```
+mermaid-preview-cli: listening on http://127.0.0.1:52341 (flow.mmd)  # --verbose only
 mermaid-preview-cli: shutting down
 mermaid-preview-cli: error: <message>                                # exit code 1 or 2
 ```
@@ -71,7 +81,9 @@ macOS-only Go binary with embedded mermaid.js and a native frameless webview
 via `--internal-host=<config.json>`, exits immediately. Multi-window host: First
 invocation spawns a persistent host process. Subsequent invocations join via IPC
 socket, opening new windows in the same process. The host manages all windows,
-the dock icon, and the NSApp event loop.
+the dock icon, and the NSApp event loop. Duplicate file detection prevents
+opening the same file twice (activates the existing window instead). Windows
+cascade automatically so multi-file opens don't stack on top of each other.
 
 ## Build & Test
 

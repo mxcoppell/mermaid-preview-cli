@@ -20,6 +20,8 @@ echo 'graph TD
 
 The CLI exits immediately (exit code 0), the window stays open. No temp files, no cleanup.
 
+On success, stdout prints `Previewing <name>` (or `Previewing <name> (reused)` if the file was already open — the existing window is activated instead of opening a duplicate).
+
 ## Recommended: Run in a Subagent
 
 Diagram rendering is a visual side-effect — no output needs to return to the conversation. Running in a subagent keeps the main context clean.

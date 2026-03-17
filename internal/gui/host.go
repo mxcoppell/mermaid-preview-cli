@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	webview "github.com/webview/webview_go"
 
@@ -33,6 +34,7 @@ type Host struct {
 	ctx        context.Context
 	cancel     context.CancelFunc
 	verbose    bool
+	ready      chan struct{} // closed after first window is created
 }
 
 // WindowEntry tracks a single preview window and its resources.
@@ -41,6 +43,7 @@ type WindowEntry struct {
 	Filename   string
 	Label      string // display name: filename or "Diagram N"
 	ColorIndex int    // 0-7 palette index
+	FilePath   string // normalized absolute path for dedup (empty for stdin)
 	Webview    webview.WebView
 	Server     *server.Server
 	Cancel     context.CancelFunc
@@ -55,6 +58,9 @@ func RunHost(cfgPath string) error {
 		return fmt.Errorf("reading config: %w", err)
 	}
 
+	// Clean stale config files older than 5 minutes.
+	cleanStaleConfigs()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -63,6 +69,7 @@ func RunHost(cfgPath string) error {
 		ctx:     ctx,
 		cancel:  cancel,
 		verbose: cfg.Verbose,
+		ready:   make(chan struct{}),
 	}
 	activeHost = h
 
@@ -82,6 +89,7 @@ func RunHost(cfgPath string) error {
 		ipcSrv.Close()
 		return fmt.Errorf("creating first window: %w", err)
 	}
+	close(h.ready)
 
 	// Signal handler
 	sigCh := make(chan os.Signal, 1)
@@ -107,9 +115,25 @@ func RunHost(cfgPath string) error {
 
 // handleIPC processes an incoming IPC request from a CLI process.
 func (h *Host) handleIPC(req ipc.OpenRequest) ipc.OpenResponse {
+	// Wait for the host to finish creating its first window.
+	<-h.ready
+
 	cfg, err := ReadConfig(req.ConfigPath)
 	if err != nil {
 		return ipc.OpenResponse{Error: fmt.Sprintf("read config: %v", err)}
+	}
+
+	// Dedup: if a window for this file already exists, activate it.
+	if cfg.FilePath != "" {
+		if entry := h.findWindowByFilePath(cfg.FilePath); entry != nil {
+			doneCh := make(chan struct{}, 1)
+			h.primaryWV.Dispatch(func() {
+				activateWindow(entry.Webview.Window())
+				doneCh <- struct{}{}
+			})
+			<-doneCh
+			return ipc.OpenResponse{OK: true, WindowID: entry.ID, Reused: true}
+		}
 	}
 
 	done := make(chan string, 1)
@@ -235,6 +259,7 @@ func (h *Host) createWindow(cfg Config) (string, error) {
 		Filename:   cfg.Filename,
 		Label:      label,
 		ColorIndex: colorIndex,
+		FilePath:   cfg.FilePath,
 		Webview:    w,
 		Server:     srv,
 		Cancel:     wCancel,
@@ -342,6 +367,20 @@ func (h *Host) OpenFile(path string) {
 		return
 	}
 
+	// Resolve symlinks for dedup.
+	resolved, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		resolved = absPath
+	}
+
+	// Dedup: activate existing window for this file.
+	if entry := h.findWindowByFilePath(resolved); entry != nil {
+		h.primaryWV.Dispatch(func() {
+			activateWindow(entry.Webview.Window())
+		})
+		return
+	}
+
 	data, err := os.ReadFile(absPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: read file: %v\n", err)
@@ -365,6 +404,7 @@ func (h *Host) OpenFile(path string) {
 		Filename:   filepath.Base(absPath),
 		IsMarkdown: isMarkdown,
 		WatchFiles: []string{absPath},
+		FilePath:   resolved,
 	}
 
 	h.primaryWV.Dispatch(func() {
@@ -415,6 +455,28 @@ func (h *Host) startFileWatchers(ctx context.Context, cfg Config, srv *server.Se
 				}
 			}
 		}(isMarkdown)
+	}
+}
+
+// findWindowByFilePath returns the first window entry with a matching file path.
+func (h *Host) findWindowByFilePath(path string) *WindowEntry {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for _, e := range h.windows {
+		if e.FilePath != "" && e.FilePath == path {
+			return e
+		}
+	}
+	return nil
+}
+
+// cleanStaleConfigs removes orphaned temp config files older than 5 minutes.
+func cleanStaleConfigs() {
+	matches, _ := filepath.Glob(filepath.Join(os.TempDir(), "mermaid-preview-cli-gui-*.json"))
+	for _, m := range matches {
+		if info, err := os.Stat(m); err == nil && time.Since(info.ModTime()) > 5*time.Minute {
+			os.Remove(m)
+		}
 	}
 }
 

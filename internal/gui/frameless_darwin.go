@@ -55,6 +55,8 @@ void guiApplyFramelessDirect(void *window) {
     applyFrameless(window);
 }
 
+static NSPoint _cascadePoint = {0, 0};
+
 void guiShowWindow(void *window, int width, int height) {
     NSWindow *nsWindow = (NSWindow *)window;
 
@@ -66,7 +68,17 @@ void guiShowWindow(void *window, int width, int height) {
         [nsWindow setFrame:frame display:NO];
     }
 
-    [nsWindow center];
+    // First window centers; subsequent windows cascade from previous position.
+    if (_cascadePoint.x == 0 && _cascadePoint.y == 0) {
+        [nsWindow center];
+    }
+    _cascadePoint = [nsWindow cascadeTopLeftFromPoint:_cascadePoint];
+
+    // Reset cascade when off-screen.
+    NSRect screen = [[NSScreen mainScreen] visibleFrame];
+    if (_cascadePoint.x > NSMaxX(screen) - 200 || _cascadePoint.y < NSMinY(screen) + 200) {
+        _cascadePoint = NSMakePoint(0, 0);
+    }
 
     // Bring to front while still invisible
     [nsWindow makeKeyAndOrderFront:nil];

@@ -18,6 +18,7 @@ type Config struct {
 	Poll       time.Duration `json:"poll,omitempty"`
 	NoWatch    bool          `json:"no_watch"`
 	Verbose    bool          `json:"verbose"`
+	FilePath   string        `json:"file_path,omitempty"` // normalized absolute path for dedup
 }
 
 // WriteConfig serializes cfg to a temp JSON file and returns the path.

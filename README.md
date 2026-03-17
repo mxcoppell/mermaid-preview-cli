@@ -20,7 +20,20 @@ Designed for AI coding agents (Claude Code, etc.) to visualize diagrams mid-conv
 ### Homebrew (macOS)
 
 ```bash
+brew tap mxcoppell/tap
+brew install mermaid-preview-cli
+```
+
+Or as a one-liner:
+
+```bash
 brew install mxcoppell/tap/mermaid-preview-cli
+```
+
+To upgrade to the latest version:
+
+```bash
+brew update && brew upgrade mermaid-preview-cli
 ```
 
 ### Download binary

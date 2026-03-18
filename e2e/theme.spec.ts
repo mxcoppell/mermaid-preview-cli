@@ -52,7 +52,7 @@ test('theme persists across page reload via localStorage', async ({
 
   // Verify localStorage was set
   const storedTheme = await page.evaluate(() =>
-    localStorage.getItem('mermaid-preview-cli-theme'),
+    localStorage.getItem('mmdp-theme'),
   );
   expect(storedTheme).toBe('dark');
 

@@ -14,10 +14,10 @@ import (
 
 	webview "github.com/webview/webview_go"
 
-	"github.com/mxcoppell/mermaid-preview-cli/internal/ipc"
-	"github.com/mxcoppell/mermaid-preview-cli/internal/parser"
-	"github.com/mxcoppell/mermaid-preview-cli/internal/server"
-	"github.com/mxcoppell/mermaid-preview-cli/internal/watcher"
+	"github.com/mxcoppell/mmdp/internal/ipc"
+	"github.com/mxcoppell/mmdp/internal/parser"
+	"github.com/mxcoppell/mmdp/internal/server"
+	"github.com/mxcoppell/mmdp/internal/watcher"
 )
 
 // activeHost is the package-level host reference needed by CGO callbacks.
@@ -106,7 +106,7 @@ func RunHost(cfgPath string) error {
 
 	// Cleanup
 	if h.verbose {
-		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: shutting down\n")
+		fmt.Fprintf(os.Stderr, "mmdp: shutting down\n")
 	}
 	ipcSrv.Close()
 	h.shutdownAllServers()
@@ -197,7 +197,7 @@ func (h *Host) createWindow(cfg Config) (string, error) {
 	}
 	url := fmt.Sprintf("http://%s", addr)
 	if h.verbose {
-		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: listening on %s (%s)\n", url, label)
+		fmt.Fprintf(os.Stderr, "mmdp: listening on %s (%s)\n", url, label)
 	}
 
 	// Start file watchers
@@ -206,7 +206,7 @@ func (h *Host) createWindow(cfg Config) (string, error) {
 	// Create webview
 	w := webview.New(false)
 	hideWindowOffscreen(w.Window())
-	w.SetTitle("mermaid-preview-cli")
+	w.SetTitle("mmdp")
 	w.SetSize(1400, 1000, webview.HintNone)
 
 	// Bind window management functions
@@ -363,7 +363,7 @@ func (h *Host) WindowList() []WindowEntry {
 func (h *Host) OpenFile(path string) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: resolve path: %v\n", err)
+		fmt.Fprintf(os.Stderr, "mmdp: resolve path: %v\n", err)
 		return
 	}
 
@@ -383,7 +383,7 @@ func (h *Host) OpenFile(path string) {
 
 	data, err := os.ReadFile(absPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: read file: %v\n", err)
+		fmt.Fprintf(os.Stderr, "mmdp: read file: %v\n", err)
 		return
 	}
 
@@ -393,7 +393,7 @@ func (h *Host) OpenFile(path string) {
 	if isMarkdown {
 		blocks := parser.ExtractMermaidBlocks(content)
 		if len(blocks) == 0 {
-			fmt.Fprintf(os.Stderr, "mermaid-preview-cli: no mermaid blocks found in %s\n", filepath.Base(absPath))
+			fmt.Fprintf(os.Stderr, "mmdp: no mermaid blocks found in %s\n", filepath.Base(absPath))
 			return
 		}
 	}
@@ -409,7 +409,7 @@ func (h *Host) OpenFile(path string) {
 
 	h.primaryWV.Dispatch(func() {
 		if _, err := h.createWindow(cfg); err != nil {
-			fmt.Fprintf(os.Stderr, "mermaid-preview-cli: open window: %v\n", err)
+			fmt.Fprintf(os.Stderr, "mmdp: open window: %v\n", err)
 		}
 	})
 }
@@ -424,7 +424,7 @@ func (h *Host) startFileWatchers(ctx context.Context, cfg Config, srv *server.Se
 		isMarkdown := strings.HasSuffix(file, ".md") || strings.HasSuffix(file, ".markdown")
 		absPath, err := filepath.Abs(file)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "mermaid-preview-cli: resolve path error (%s): %v\n", file, err)
+			fmt.Fprintf(os.Stderr, "mmdp: resolve path error (%s): %v\n", file, err)
 			continue
 		}
 
@@ -434,14 +434,14 @@ func (h *Host) startFileWatchers(ctx context.Context, cfg Config, srv *server.Se
 		} else {
 			w, err = watcher.NewFileWatcher(absPath)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "mermaid-preview-cli: watcher error (%s): %v\n", file, err)
+				fmt.Fprintf(os.Stderr, "mmdp: watcher error (%s): %v\n", file, err)
 				continue
 			}
 		}
 
 		go func() {
 			if err := w.Start(ctx); err != nil {
-				fmt.Fprintf(os.Stderr, "mermaid-preview-cli: watcher error: %v\n", err)
+				fmt.Fprintf(os.Stderr, "mmdp: watcher error: %v\n", err)
 			}
 		}()
 
@@ -472,7 +472,7 @@ func (h *Host) findWindowByFilePath(path string) *WindowEntry {
 
 // cleanStaleConfigs removes orphaned temp config files older than 5 minutes.
 func cleanStaleConfigs() {
-	matches, _ := filepath.Glob(filepath.Join(os.TempDir(), "mermaid-preview-cli-gui-*.json"))
+	matches, _ := filepath.Glob(filepath.Join(os.TempDir(), "mmdp-gui-*.json"))
 	for _, m := range matches {
 		if info, err := os.Stat(m); err == nil && time.Since(info.ModTime()) > 5*time.Minute {
 			os.Remove(m)

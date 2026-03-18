@@ -9,14 +9,14 @@ export interface ServerInstance {
 }
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const BINARY_PATH = path.join(PROJECT_ROOT, 'mermaid-preview-cli');
+const BINARY_PATH = path.join(PROJECT_ROOT, 'mmdp');
 
 /**
  * Build the Go binary if it doesn't already exist.
  */
 function ensureBinary(): void {
   if (!fs.existsSync(BINARY_PATH)) {
-    execFileSync('go', ['build', '-o', 'mermaid-preview-cli', './cmd/mermaid-preview-cli'], {
+    execFileSync('go', ['build', '-o', 'mmdp', './cmd/mmdp'], {
       cwd: PROJECT_ROOT,
       stdio: 'pipe',
     });
@@ -24,7 +24,7 @@ function ensureBinary(): void {
 }
 
 /**
- * Start the mermaid-preview-cli server for a given file.
+ * Start the mmdp server for a given file.
  * Waits for the "listening on" line and extracts the port.
  */
 export async function startServer(
@@ -44,7 +44,7 @@ export async function startServer(
 }
 
 /**
- * Start the mermaid-preview-cli server reading from stdin.
+ * Start the mmdp server reading from stdin.
  * Pipes the provided content into the process stdin.
  */
 export async function startServerWithStdin(
@@ -69,7 +69,7 @@ export async function startServerWithStdin(
 
 /**
  * Wait for the server to print its listening address on stderr.
- * Parses: "mermaid-preview-cli: listening on http://127.0.0.1:XXXXX"
+ * Parses: "mmdp: listening on http://127.0.0.1:XXXXX"
  */
 function waitForListening(
   proc: ChildProcess,
@@ -84,7 +84,7 @@ function waitForListening(
     proc.stderr!.on('data', (chunk: Buffer) => {
       stderrBuf += chunk.toString();
       const match = stderrBuf.match(
-        /mermaid-preview-cli: listening on (http:\/\/127\.0\.0\.1:(\d+))/,
+        /mmdp: listening on (http:\/\/127\.0\.0\.1:(\d+))/,
       );
       if (match) {
         clearTimeout(timeout);

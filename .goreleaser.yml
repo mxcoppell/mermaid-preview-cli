@@ -1,10 +1,10 @@
 version: 2
 
 builds:
-  - main: ./cmd/mermaid-preview-cli
-    binary: mermaid-preview-cli
+  - main: ./cmd/mmdp
+    binary: mmdp
     ldflags:
-      - -s -w -X github.com/mxcoppell/mermaid-preview-cli/internal/version.Version={{.Version}}
+      - -s -w -X github.com/mxcoppell/mmdp/internal/version.Version={{.Version}}
     env:
       - CGO_ENABLED=1
     goos:
@@ -18,7 +18,7 @@ archives:
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
     files:
-      - skills/mermaid-preview-cli.md
+      - skills/mmdp.md
 
 checksum:
   name_template: checksums.txt
@@ -36,13 +36,13 @@ homebrew_casks:
       owner: mxcoppell
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    name: mermaid-preview-cli
-    homepage: https://github.com/mxcoppell/mermaid-preview-cli
+    name: mmdp
+    homepage: https://github.com/mxcoppell/mmdp
     description: CLI tool for previewing Mermaid diagrams
     license: MIT
     hooks:
       post:
         install: |
           if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/mermaid-preview-cli"]
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/mmdp"]
           end

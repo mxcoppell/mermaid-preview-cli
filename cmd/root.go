@@ -12,10 +12,10 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/mxcoppell/mermaid-preview-cli/internal/gui"
-	"github.com/mxcoppell/mermaid-preview-cli/internal/ipc"
-	"github.com/mxcoppell/mermaid-preview-cli/internal/parser"
-	"github.com/mxcoppell/mermaid-preview-cli/internal/version"
+	"github.com/mxcoppell/mmdp/internal/gui"
+	"github.com/mxcoppell/mmdp/internal/ipc"
+	"github.com/mxcoppell/mmdp/internal/parser"
+	"github.com/mxcoppell/mmdp/internal/version"
 )
 
 const maxStdinSize = 10 * 1024 * 1024 // 10MB
@@ -37,12 +37,12 @@ func Execute() int {
 		if err == flag.ErrHelp {
 			return 0
 		}
-		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "mmdp: error: %v\n", err)
 		return 1
 	}
 
 	if err := run(cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "mmdp: error: %v\n", err)
 		return 2
 	}
 	return 0
@@ -52,7 +52,7 @@ func parseFlags(args []string, stdin *os.File) (Config, error) {
 	var cfg Config
 	var showVersion bool
 
-	fs := flag.NewFlagSet("mermaid-preview-cli", flag.ContinueOnError)
+	fs := flag.NewFlagSet("mmdp", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 
 	fs.IntVar(&cfg.Port, "port", 0, "")
@@ -81,7 +81,7 @@ func parseFlags(args []string, stdin *os.File) (Config, error) {
 	}
 
 	if showVersion {
-		fmt.Fprintf(os.Stdout, "mermaid-preview-cli %s\n", version.Version)
+		fmt.Fprintf(os.Stdout, "mmdp %s\n", version.Version)
 		return Config{}, flag.ErrHelp
 	}
 
@@ -227,7 +227,7 @@ func trySendIPC(cfg gui.Config) (ipc.OpenResponse, bool) {
 		return ipc.OpenResponse{}, false
 	}
 	if !resp.OK {
-		fmt.Fprintf(os.Stderr, "mermaid-preview-cli: host error: %s\n", resp.Error)
+		fmt.Fprintf(os.Stderr, "mmdp: host error: %s\n", resp.Error)
 		return ipc.OpenResponse{}, false
 	}
 	return resp, true
@@ -267,7 +267,7 @@ func spawnHostProcess(cfg gui.Config) error {
 
 func printHelp(w io.Writer) {
 	fmt.Fprint(w, `USAGE:
-    mermaid-preview-cli [FLAGS] [FILE...]
+    mmdp [FLAGS] [FILE...]
 
 ARGUMENTS:
     FILE    One or more .mmd, .mermaid, or .md files
@@ -284,8 +284,8 @@ FLAGS:
     -h, --help            Print help
 
 STDIN:
-    echo "graph LR; A-->B" | mermaid-preview-cli
-    cat diagram.mmd | mermaid-preview-cli
+    echo "graph LR; A-->B" | mmdp
+    cat diagram.mmd | mmdp
 
 AGENT TOOL USAGE:
     Pipe mermaid source to stdin. The CLI opens a native preview window
@@ -297,10 +297,10 @@ AGENT TOOL USAGE:
     the existing window instead of opening a duplicate.
 
     Example from an LLM agent:
-        echo "graph TD; A-->B-->C" | mermaid-preview-cli
+        echo "graph TD; A-->B-->C" | mmdp
 
     For file-based preview with live reload:
-        mermaid-preview-cli diagram.mmd
+        mmdp diagram.mmd
 
 KEYBOARD SHORTCUTS (in preview window):
     Cmd/Ctrl+F  Search nodes      T  Toggle theme

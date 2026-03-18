@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mxcoppell/mermaid-preview-cli/internal/parser"
-	"github.com/mxcoppell/mermaid-preview-cli/web"
+	"github.com/mxcoppell/mmdp/internal/parser"
+	"github.com/mxcoppell/mmdp/web"
 )
 
 // Config holds server configuration.
@@ -27,7 +27,7 @@ type Config struct {
 	ColorHex   string // hex color for window badge (e.g. "#FF453A")
 }
 
-// Server is the HTTP server for mermaid-preview-cli.
+// Server is the HTTP server for mmdp.
 type Server struct {
 	cfg        Config
 	mu         sync.RWMutex
@@ -80,7 +80,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 	go func() {
 		defer close(s.done)
 		if err := s.srv.Serve(ln); err != nil && err != http.ErrServerClosed {
-			fmt.Printf("mermaid-preview-cli: server error: %v\n", err)
+			fmt.Printf("mmdp: server error: %v\n", err)
 		}
 	}()
 

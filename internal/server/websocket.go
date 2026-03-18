@@ -82,7 +82,7 @@ func (h *WSHub) removeConn(conn *websocket.Conn) {
 			h.mu.Unlock()
 			if count == 0 {
 				if h.server.cfg.Verbose {
-					fmt.Fprintf(os.Stderr, "mermaid-preview-cli: no clients connected, shutting down\n")
+					fmt.Fprintf(os.Stderr, "mmdp: no clients connected, shutting down\n")
 				}
 				h.server.Shutdown()
 			}

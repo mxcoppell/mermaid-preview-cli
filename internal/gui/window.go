@@ -19,7 +19,7 @@ func createWindow(url string) webview.WebView {
 	// Hide IMMEDIATELY — before SetTitle/SetSize/Navigate
 	// can trigger any visible window appearance.
 	hideWindowOffscreen(w.Window())
-	w.SetTitle("mermaid-preview-cli")
+	w.SetTitle("mmdp")
 	w.SetSize(1400, 1000, webview.HintNone)
 
 	// Auto-size binding with dampening

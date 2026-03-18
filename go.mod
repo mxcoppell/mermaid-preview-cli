@@ -1,4 +1,4 @@
-module github.com/mxcoppell/mermaid-preview-cli
+module github.com/mxcoppell/mmdp
 
 go 1.25.6
 

@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mxcoppell/mermaid-preview-cli/cmd"
-	"github.com/mxcoppell/mermaid-preview-cli/internal/gui"
+	"github.com/mxcoppell/mmdp/cmd"
+	"github.com/mxcoppell/mmdp/internal/gui"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 		if strings.HasPrefix(arg, "--internal-host=") {
 			cfgPath := strings.TrimPrefix(arg, "--internal-host=")
 			if err := gui.RunHost(cfgPath); err != nil {
-				fmt.Fprintf(os.Stderr, "mermaid-preview-cli: error: %v\n", err)
+				fmt.Fprintf(os.Stderr, "mmdp: error: %v\n", err)
 				os.Exit(2)
 			}
 			return
@@ -25,7 +25,7 @@ func main() {
 		if strings.HasPrefix(arg, "--internal-gui=") {
 			cfgPath := strings.TrimPrefix(arg, "--internal-gui=")
 			if err := gui.Run(cfgPath); err != nil {
-				fmt.Fprintf(os.Stderr, "mermaid-preview-cli: error: %v\n", err)
+				fmt.Fprintf(os.Stderr, "mmdp: error: %v\n", err)
 				os.Exit(2)
 			}
 			return

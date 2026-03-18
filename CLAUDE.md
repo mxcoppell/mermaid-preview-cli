@@ -1,4 +1,4 @@
-# mermaid-preview-cli
+# mmdp
 
 Lightweight CLI to preview Mermaid diagrams in a native frameless window (macOS only).
 
@@ -8,7 +8,7 @@ To display a mermaid diagram, pipe it to stdin. The CLI opens a native
 frameless window and exits immediately (exit code 0).
 
 ```bash
-echo "graph TD; A-->B-->C" | mermaid-preview-cli
+echo "graph TD; A-->B-->C" | mmdp
 ```
 
 On success, the CLI prints `Previewing <name>` to **stdout** so agents can
@@ -21,23 +21,23 @@ stays open after the CLI exits.
 You can also preview an existing file (this starts a server with live reload):
 
 ```bash
-mermaid-preview-cli diagram.mmd
+mmdp diagram.mmd
 ```
 
 ## Quick Usage
 
 ```bash
 # Fire-and-forget preview (stdin — CLI exits immediately)
-echo "graph LR; A-->B" | mermaid-preview-cli
+echo "graph LR; A-->B" | mmdp
 
 # Live preview with file watching
-mermaid-preview-cli diagram.mmd
+mmdp diagram.mmd
 
 # Multiple files — each gets its own window
-mermaid-preview-cli flow.mmd sequence.mmd arch.md
+mmdp flow.mmd sequence.mmd arch.md
 
 # Extracts ```mermaid blocks from markdown
-mermaid-preview-cli README.md
+mmdp README.md
 ```
 
 ## Flags
@@ -69,9 +69,9 @@ Previewing stdin                      # stdin input
 
 **Stderr** (structured diagnostics, `--verbose` for info messages):
 ```
-mermaid-preview-cli: listening on http://127.0.0.1:52341 (flow.mmd)  # --verbose only
-mermaid-preview-cli: shutting down
-mermaid-preview-cli: error: <message>                                # exit code 1 or 2
+mmdp: listening on http://127.0.0.1:52341 (flow.mmd)  # --verbose only
+mmdp: shutting down
+mmdp: error: <message>                                # exit code 1 or 2
 ```
 
 ## Architecture
@@ -88,21 +88,21 @@ cascade automatically so multi-file opens don't stack on top of each other.
 ## Build & Test
 
 ```bash
-go build -ldflags="-s -w" -o bin/mermaid-preview-cli ./cmd/mermaid-preview-cli  # build
+go build -ldflags="-s -w" -o bin/mmdp ./cmd/mmdp  # build
 go test ./...                                         # unit tests
 cd e2e && npm ci && npx playwright test               # E2E tests
 ```
 
 ## Agent Skill
 
-A Claude Code skill is provided at `skills/mermaid-preview-cli.md`. To install it
+A Claude Code skill is provided at `skills/mmdp.md`. To install it
 for use across projects, symlink or copy it into your Claude Code skills
 directory:
 
 ```bash
 # Symlink (recommended — stays up to date)
-mkdir -p ~/.claude/skills/mermaid-preview-cli
-ln -s "$(pwd)/skills/mermaid-preview-cli.md" ~/.claude/skills/mermaid-preview-cli/SKILL.md
+mkdir -p ~/.claude/skills/mmdp
+ln -s "$(pwd)/skills/mmdp.md" ~/.claude/skills/mmdp/SKILL.md
 ```
 
 Once installed, Claude Code will automatically activate the skill when you ask
@@ -111,7 +111,7 @@ to visualize, preview, or display a Mermaid diagram.
 ## Project Structure
 
 ```
-cmd/mermaid-preview-cli/main.go      # entrypoint → cmd.Execute(), gui.RunHost(), or gui.Run()
+cmd/mmdp/main.go      # entrypoint → cmd.Execute(), gui.RunHost(), or gui.Run()
 cmd/root.go                          # flag parsing, config, IPC-first spawn
 internal/gui/host.go                 # multi-window host: IPC, window management, lifecycle
 internal/gui/gui.go                  # legacy single-window GUI entry point

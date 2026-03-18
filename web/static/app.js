@@ -1,4 +1,4 @@
-// mermaid-preview-cli frontend
+// mmdp frontend
 (function() {
     'use strict';
 
@@ -37,7 +37,7 @@
     // ─── Theme ────────────────────────────────────────────────────
     const themeOrder = ['system', 'light', 'dark'];
     let currentThemeIndex = themeOrder.indexOf(
-        localStorage.getItem('mermaid-preview-cli-theme') || config.theme
+        localStorage.getItem('mmdp-theme') || config.theme
     );
     if (currentThemeIndex === -1) currentThemeIndex = 0;
 
@@ -52,7 +52,7 @@
     function applyTheme() {
         const theme = themeOrder[currentThemeIndex];
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('mermaid-preview-cli-theme', theme);
+        localStorage.setItem('mmdp-theme', theme);
     }
 
     function cycleTheme() {

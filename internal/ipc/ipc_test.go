@@ -18,7 +18,7 @@ func TestSocketPath(t *testing.T) {
 func TestSocketPath_ContainsUID(t *testing.T) {
 	path := SocketPath()
 	uid := os.Getuid()
-	expected := fmt.Sprintf("mermaid-preview-cli-%d.sock", uid)
+	expected := fmt.Sprintf("mmdp-%d.sock", uid)
 	if !strings.Contains(path, expected) {
 		t.Errorf("SocketPath %q should contain %q", path, expected)
 	}

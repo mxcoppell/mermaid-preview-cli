@@ -1,11 +1,11 @@
 ---
-name: mermaid-preview-cli
+name: mmdp
 description: Preview, visualize, render, display, or show Mermaid diagrams in a native frameless window — supports stdin fire-and-forget, live file preview, markdown extraction, and multi-file comparison
 ---
 
 # Mermaid Preview
 
-Display Mermaid diagrams in a native frameless window using the `mermaid-preview-cli` CLI. Single binary with embedded mermaid.js — no browser, no Node.js.
+Display Mermaid diagrams in a native frameless window using the `mmdp` CLI. Single binary with embedded mermaid.js — no browser, no Node.js.
 
 ## Important: Always Pipe, Never Create Files
 
@@ -15,7 +15,7 @@ Display Mermaid diagrams in a native frameless window using the `mermaid-preview
 echo 'graph TD
     A[Start] --> B{Decision}
     B -->|Yes| C[Do Thing]
-    B -->|No| D[Skip]' | mermaid-preview-cli
+    B -->|No| D[Skip]' | mmdp
 ```
 
 The CLI exits immediately (exit code 0), the window stays open. No temp files, no cleanup.
@@ -29,13 +29,13 @@ Diagram rendering is a visual side-effect — no output needs to return to the c
 ```
 Agent tool call:
   prompt: |
-    Render this Mermaid diagram using mermaid-preview-cli:
+    Render this Mermaid diagram using mmdp:
 
     echo 'graph TD
         A[User Request] --> B[Auth Service]
         B --> C{Valid?}
         C -->|Yes| D[Process]
-        C -->|No| E[Reject]' | mermaid-preview-cli
+        C -->|No| E[Reject]' | mmdp
   subagent_type: general-purpose
 ```
 
@@ -46,9 +46,9 @@ Agent tool call:
 For files that already exist in the project, use file mode with live reload:
 
 ```bash
-mermaid-preview-cli diagram.mmd           # single file
-mermaid-preview-cli README.md             # extracts ```mermaid blocks
-mermaid-preview-cli before.mmd after.mmd  # side-by-side comparison
+mmdp diagram.mmd           # single file
+mmdp README.md             # extracts ```mermaid blocks
+mmdp before.mmd after.mmd  # side-by-side comparison
 ```
 
 ## Quick Reference
